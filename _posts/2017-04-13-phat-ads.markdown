@@ -1,0 +1,35 @@
+---
+title:  "Phat Ads"
+date:   2017-04-13 12:00:00 +0100
+time_to_read: 1
+redirect_from: 2017/04/13/phat-ads.html
+---
+
+Although I personally use [DuckDuckGo][duckduckgo] for search results, Google still has advertising trackers on millions of websites and apps. These trackers compile all your preferences and interests, and provide them to Advertisers. Advertisers with this amount of user knowledge can do some nasty things, such as [charging you more][charge] for services than your peers.
+
+Thankfully, Google does provide some settings, which should be taken with a grain of salt, that let users customize their Ad and Search preferences.
+
+### Ads Personalization ###
+
+Simply navigate to Google's [Ads Personalization][personalization] page and turn it off. Unless you have an ad-blocker installed, you'll still see ads, but they won't be based on data that Google has associated with your account.
+
+<div class="center-media img-container" alt="Google's Ad Personalization Page">
+    {% include svg/personalization.jpg.svg %}
+    <img src="/assets/imgs/personalization.jpg" class="overlay-img">
+</div>
+<p class="image-label">Google's Ad Personalization Page</p>
+
+If you want to take your anti-ad crusade further, I would suggest installing the [Privacy Badger][privacybadger] Chrome extension, using DuckDuckGo (they also have a Chrome extension!) and optionally using an ad-blocker (I use the [AdBlock][adblocker] Chrome extension).
+
+### Activity Controls ###
+
+Google also has another settings page, [Activity Controls][activity] that lets you "tell Google which types of data you’d like [Google] to save". This is not related to ads per se, but it definitely strengthens your online privacy!
+
+I've gone through and turned off (paused) all the possible data collection vectors. I use Google Maps and YouTube regularly, and this hasn't yet impacted my browsing experience.
+
+[duckduckgo]: https://duckduckgo.com/
+[charge]: https://www.theguardian.com/commentisfree/2016/dec/06/cookie-monsters-why-your-browsing-history-could-mean-rip-off-prices
+[personalization]: https://www.google.com/settings/u/0/ads/authenticated
+[privacybadger]: https://www.eff.org/privacybadger
+[adblocker]: https://chrome.google.com/webstore/detail/adblock/gighmmpiobklfepjocnamgkkbiglidom
+[activity]: https://myaccount.google.com/activitycontrols

@@ -1,0 +1,3862 @@
+diff --git a/args.gn b/args.gn
+new file mode 100644
+index 000000000000..94bf0c3197a6
+--- /dev/null
++++ b/args.gn
+@@ -0,0 +1,2 @@
++is_debug = false
++
+diff --git a/chrome/browser/extensions/BUILD.gn b/chrome/browser/extensions/BUILD.gn
+index 6cfbb6366b76..e558c1fd172a 100644
+--- a/chrome/browser/extensions/BUILD.gn
++++ b/chrome/browser/extensions/BUILD.gn
+@@ -161,6 +161,8 @@ static_library("extensions") {
+     "api/developer_private/inspectable_views_finder.h",
+     "api/developer_private/show_permissions_dialog_helper.cc",
+     "api/developer_private/show_permissions_dialog_helper.h",
++    "api/developer_private/show_suspicious_actions_dialog_helper.cc",
++    "api/developer_private/show_suspicious_actions_dialog_helper.h",
+     "api/dial/dial_api.cc",
+     "api/dial/dial_api.h",
+     "api/dial/dial_api_factory.cc",
+diff --git a/chrome/browser/extensions/api/developer_private/developer_private_api.cc b/chrome/browser/extensions/api/developer_private/developer_private_api.cc
+index 81ec02f14c9b..b126c7e8dd36 100644
+--- a/chrome/browser/extensions/api/developer_private/developer_private_api.cc
++++ b/chrome/browser/extensions/api/developer_private/developer_private_api.cc
+@@ -22,6 +22,7 @@
+ #include "chrome/browser/extensions/api/developer_private/entry_picker.h"
+ #include "chrome/browser/extensions/api/developer_private/extension_info_generator.h"
+ #include "chrome/browser/extensions/api/developer_private/show_permissions_dialog_helper.h"
++#include "chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.h"
+ #include "chrome/browser/extensions/api/extension_action/extension_action_api.h"
+ #include "chrome/browser/extensions/devtools_util.h"
+ #include "chrome/browser/extensions/extension_commands_global_registry.h"
+@@ -788,6 +789,39 @@ void DeveloperPrivateShowPermissionsDialogFunction::Finish() {
+   Respond(NoArguments());
+ }
+ 
++DeveloperPrivateShowSuspiciousActionsDialogFunction::
++DeveloperPrivateShowSuspiciousActionsDialogFunction() {}
++
++DeveloperPrivateShowSuspiciousActionsDialogFunction::
++~DeveloperPrivateShowSuspiciousActionsDialogFunction() {}
++
++ExtensionFunction::ResponseAction
++DeveloperPrivateShowSuspiciousActionsDialogFunction::Run() {
++  std::unique_ptr<developer::ShowSuspiciousActionsDialog::Params> params(
++      developer::ShowSuspiciousActionsDialog::Params::Create(*args_));
++  EXTENSION_FUNCTION_VALIDATE(params);
++
++  const Extension* target_extension = GetExtensionById(params->extension_id);
++  if (!target_extension)
++    return RespondNow(Error(kNoSuchExtensionError));
++
++  content::WebContents* web_contents = GetSenderWebContents();
++  if (!web_contents)
++    return RespondNow(Error(kCouldNotFindWebContentsError));
++
++  ShowSuspiciousActionsDialogHelper::Show(
++      browser_context(),
++      web_contents,
++      target_extension,
++      source_context_type() == Feature::WEBUI_CONTEXT,
++      base::Bind(&DeveloperPrivateShowSuspiciousActionsDialogFunction::Finish, this));
++  return RespondLater();
++}
++
++void DeveloperPrivateShowSuspiciousActionsDialogFunction::Finish() {
++  Respond(NoArguments());
++}
++
+ DeveloperPrivateLoadUnpackedFunction::DeveloperPrivateLoadUnpackedFunction() {}
+ 
+ ExtensionFunction::ResponseAction DeveloperPrivateLoadUnpackedFunction::Run() {
+diff --git a/chrome/browser/extensions/api/developer_private/developer_private_api.h b/chrome/browser/extensions/api/developer_private/developer_private_api.h
+index 7b0d29f8ad3d..d652267012b4 100644
+--- a/chrome/browser/extensions/api/developer_private/developer_private_api.h
++++ b/chrome/browser/extensions/api/developer_private/developer_private_api.h
+@@ -390,6 +390,23 @@ class DeveloperPrivateShowPermissionsDialogFunction
+   DISALLOW_COPY_AND_ASSIGN(DeveloperPrivateShowPermissionsDialogFunction);
+ };
+ 
++class DeveloperPrivateShowSuspiciousActionsDialogFunction
++    : public DeveloperPrivateAPIFunction {
++ public:
++  DECLARE_EXTENSION_FUNCTION("developerPrivate.showSuspiciousActionsDialog",
++                             DEVELOPERPRIVATE_PERMISSIONS);
++  DeveloperPrivateShowSuspiciousActionsDialogFunction();
++
++ protected:
++  // DeveloperPrivateAPIFunction:
++  ~DeveloperPrivateShowSuspiciousActionsDialogFunction() override;
++  ResponseAction Run() override;
++
++  void Finish();
++
++  DISALLOW_COPY_AND_ASSIGN(DeveloperPrivateShowSuspiciousActionsDialogFunction);
++};
++
+ class DeveloperPrivateChooseEntryFunction : public UIThreadExtensionFunction,
+                                             public EntryPickerClient {
+  protected:
+diff --git a/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.cc b/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.cc
+new file mode 100644
+index 000000000000..a53808fe5f70
+--- /dev/null
++++ b/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.cc
+@@ -0,0 +1,60 @@
++// Copyright 2015 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.h"
++
++#include <utility>
++
++#include "apps/saved_files_service.h"
++#include "base/metrics/histogram_macros.h"
++#include "chrome/browser/apps/app_load_service.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/browser/ui/apps/app_info_dialog.h"
++#include "content/public/browser/web_contents.h"
++#include "extensions/browser/api/device_permissions_manager.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/permissions/permissions_data.h"
++#include "chrome/browser/ui/views/extensions/extension_suspicious_actions_view.h"
++
++namespace extensions {
++
++ShowSuspiciousActionsDialogHelper::ShowSuspiciousActionsDialogHelper(
++    const base::Closure& on_complete)
++    : on_complete_(on_complete) {
++}
++
++ShowSuspiciousActionsDialogHelper::~ShowSuspiciousActionsDialogHelper() {
++}
++
++// static
++void ShowSuspiciousActionsDialogHelper::Show(content::BrowserContext* browser_context,
++                                             content::WebContents* web_contents,
++                                             const Extension* extension,
++                                             bool from_webui,
++                                             const base::Closure& on_complete) {
++  Profile* profile = Profile::FromBrowserContext(browser_context);
++  // ShowSuspiciousActionsDialogHelper manages its own lifetime.
++  ShowSuspiciousActionsDialogHelper* helper =
++      new ShowSuspiciousActionsDialogHelper(on_complete);
++  helper->ShowSuspiciousActionsDialog(browser_context, profile, web_contents, extension);
++}
++
++void ShowSuspiciousActionsDialogHelper::ShowSuspiciousActionsDialog(
++    content::BrowserContext* browser_context,
++    Profile* profile,
++    content::WebContents* web_contents,
++    const Extension* extension) {
++  ExtensionSuspiciousActionsView::ShowDialog(
++    base::Bind(&ShowSuspiciousActionsDialogHelper::OnDone, base::Unretained(this)),
++    browser_context, profile, web_contents, extension
++  );
++}
++
++void ShowSuspiciousActionsDialogHelper::OnDone() {
++  on_complete_.Run();
++  delete this;
++}
++
++}  // namespace extensions
+diff --git a/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.h b/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.h
+new file mode 100644
+index 000000000000..9c8798556d62
+--- /dev/null
++++ b/chrome/browser/extensions/api/developer_private/show_suspicious_actions_dialog_helper.h
+@@ -0,0 +1,49 @@
++// Copyright 2015 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_EXTENSIONS_API_DEVELOPER_PRIVATE_SHOW_SUSPICIOUS_ACTIONS_DIALOG_HELPER_H_
++#define CHROME_BROWSER_EXTENSIONS_API_DEVELOPER_PRIVATE_SHOW_SUSPICIOUS_ACTIONS_DIALOG_HELPER_H_
++
++#include <memory>
++
++#include "base/bind.h"
++#include "base/macros.h"
++#include "chrome/browser/extensions/extension_install_prompt.h"
++
++class Profile;
++
++namespace content {
++class BrowserContext;
++class WebContents;
++}
++
++namespace extensions {
++class Extension;
++
++class ShowSuspiciousActionsDialogHelper {
++ public:
++  static void Show(content::BrowserContext* browser_context,
++                   content::WebContents* web_contents,
++                   const Extension* extension,
++                   bool from_webui,
++                   const base::Closure& on_complete);
++ private:
++  ShowSuspiciousActionsDialogHelper(const base::Closure& on_complete);
++  ~ShowSuspiciousActionsDialogHelper();  // Manages its own lifetime.
++
++  void ShowSuspiciousActionsDialog(content::BrowserContext* browser_context,
++                                   Profile* profile, 
++                                   content::WebContents* web_contents,
++                                   const Extension* extension);
++  void OnDone();
++
++  base::Closure on_complete_;
++  std::string extension_id_;
++
++  DISALLOW_COPY_AND_ASSIGN(ShowSuspiciousActionsDialogHelper);
++};
++
++}  // namespace extensions
++
++#endif  // CHROME_BROWSER_EXTENSIONS_API_DEVELOPER_PRIVATE_SHOW_SUSPICIOUS_ACTIONS_DIALOG_HELPER_H_
+diff --git a/chrome/browser/resources/extensions/extension_list.js b/chrome/browser/resources/extensions/extension_list.js
+index df40e770919c..f1c6fd25ae00 100644
+--- a/chrome/browser/resources/extensions/extension_list.js
++++ b/chrome/browser/resources/extensions/extension_list.js
+@@ -140,6 +140,12 @@ cr.define('extensions', function() {
+     permissionsPromptIsShowing_: false,
+ 
+     /**
++     * Indicates whether a permissions prompt is showing.
++     * @private {boolean}
++     */
++    suspiciousActionsPromptIsShowing_: false,
++
++    /**
+      * Whether or not any initial navigation (like scrolling to an extension,
+      * or opening an options page) has occurred.
+      * @private {boolean}
+@@ -431,6 +437,16 @@ cr.define('extensions', function() {
+         e.preventDefault();
+       });
+ 
++      wrapper.setupColumn('details', '.suspicious-actions-link', 'click', function(e) {
++        if (!this.suspiciousActionsPromptIsShowing_) {
++          chrome.developerPrivate.showSuspiciousActionsDialog(extension.id, function() {
++            this.suspiciousActionsPromptIsShowing_ = false;
++          }.bind(this));
++          this.suspiciousActionsPromptIsShowing_ = true;
++        }
++        e.preventDefault();
++      });
++
+       wrapper.setupColumn('options', '.options-button', 'click', function(e) {
+         this.showEmbeddedExtensionOptions_(extension.id, false);
+         e.preventDefault();
+diff --git a/chrome/browser/resources/extensions/extensions.html b/chrome/browser/resources/extensions/extensions.html
+index 0f4be9a3d1ed..91912bee89bd 100644
+--- a/chrome/browser/resources/extensions/extensions.html
++++ b/chrome/browser/resources/extensions/extensions.html
+@@ -149,6 +149,9 @@
+           <a is="action-link" class="permissions-link">
+             $i18n{extensionSettingsPermissions}
+           </a>
++          <a is="action-link" class="suspicious-actions-link">
++            Configure Suspicious Actions
++          </a>
+           <a is="action-link" class="options-button" hidden>
+             $i18n{extensionSettingsOptions}
+           </a>
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index 7e322e7b3440..9bbd0a4c06aa 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -1503,6 +1503,12 @@ split_static_library("ui") {
+       "views/extensions/extension_install_dialog_view.h",
+       "views/extensions/extension_keybinding_registry_views.cc",
+       "views/extensions/extension_keybinding_registry_views.h",
++      "views/extensions/extension_action_prompt_view.cc",
++      "views/extensions/extension_action_prompt_view.h",
++      "views/extensions/extension_suspicious_actions_view.cc",
++      "views/extensions/extension_suspicious_actions_view.h",
++      "views/extensions/suspicious_action_config.cc",
++      "views/extensions/suspicious_action_config.h",
+       "views/frame/native_widget_mac_frameless_nswindow.h",
+       "views/frame/native_widget_mac_frameless_nswindow.mm",
+       "views/global_error_bubble_view.cc",
+diff --git a/chrome/browser/ui/browser.cc b/chrome/browser/ui/browser.cc
+index 3d376c9b05bb..17faa92c8778 100644
+--- a/chrome/browser/ui/browser.cc
++++ b/chrome/browser/ui/browser.cc
+@@ -211,6 +211,7 @@
+ #include "ui/base/window_open_disposition.h"
+ #include "ui/gfx/geometry/point.h"
+ #include "ui/shell_dialogs/selected_file_info.h"
++#include "chrome/browser/ui/views/extensions/extension_action_prompt_view.cc"
+ 
+ #if defined(OS_WIN)
+ #include <windows.h>
+@@ -1738,6 +1739,26 @@ content::JavaScriptDialogManager* Browser::GetJavaScriptDialogManager(
+   return JavaScriptDialogTabHelper::FromWebContents(source);
+ }
+ 
++void Browser::ShowExtensionActionPromptView(WebContents* source,
++                                            const base::string16& message,
++                                            const SuspiciousExtensionAction& extension_action,
++                                            const SensitiveElement& sensitive_element,
++                                            const GURL& extension_url,
++                                            const GURL& frame_url,
++                                            const DialogClosedCallback& callback) {
++  gfx::NativeWindow parent_window = window_->GetNativeWindow();
++  ExtensionActionPromptView::ShowDialog(
++    source,
++    parent_window,
++    message,
++    extension_action,
++    sensitive_element,
++    extension_url,
++    frame_url,
++    callback
++  );
++}
++
+ content::ColorChooser* Browser::OpenColorChooser(
+       WebContents* web_contents,
+       SkColor initial_color,
+diff --git a/chrome/browser/ui/browser.h b/chrome/browser/ui/browser.h
+index 4ceb67f0686a..3d11620d668f 100644
+--- a/chrome/browser/ui/browser.h
++++ b/chrome/browser/ui/browser.h
+@@ -644,6 +644,13 @@ class Browser : public TabStripModelObserver,
+       content::WebContents* web_contents) override;
+   content::JavaScriptDialogManager* GetJavaScriptDialogManager(
+       content::WebContents* source) override;
++  void ShowExtensionActionPromptView(content::WebContents* source,
++                                     const base::string16& message,
++                                     const SuspiciousExtensionAction& extension_action,
++                                     const SensitiveElement& sensitive_element,
++                                     const GURL& extension_url,
++                                     const GURL& frame_url,
++                                     const DialogClosedCallback& callback) override;
+   content::ColorChooser* OpenColorChooser(
+       content::WebContents* web_contents,
+       SkColor color,
+diff --git a/chrome/browser/ui/views/extensions/extension_action_prompt_view.cc b/chrome/browser/ui/views/extensions/extension_action_prompt_view.cc
+new file mode 100644
+index 000000000000..416a3be941be
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/extension_action_prompt_view.cc
+@@ -0,0 +1,389 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/ui/views/extensions/extension_action_prompt_view.h"
++
++#include <stddef.h>
++#include <algorithm>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include "base/memory/weak_ptr.h"
++#include "base/callback_helpers.h"
++#include "base/callback.h"
++#include "base/command_line.h"
++#include "base/compiler_specific.h"
++#include "base/i18n/rtl.h"
++#include "base/macros.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/strings/string_util.h"
++#include "base/strings/utf_string_conversions.h"
++#include "chrome/app/vector_icons/vector_icons.h"
++#include "chrome/browser/browser_process.h"
++#include "chrome/browser/extensions/api/experience_sampling_private/experience_sampling.h"
++#include "chrome/browser/extensions/extension_install_prompt_show_params.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/browser/ui/browser.h"
++#include "chrome/browser/ui/scoped_tabbed_browser_displayer.h"
++#include "chrome/common/extensions/extension_constants.h"
++#include "chrome/grit/generated_resources.h"
++#include "chrome/installer/util/browser_distribution.h"
++#include "components/constrained_window/constrained_window_views.h"
++#include "content/public/browser/browser_thread.h"
++#include "content/public/browser/page_navigator.h"
++#include "content/public/browser/web_contents.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/extension_urls.h"
++#include "ui/base/l10n/l10n_util.h"
++#include "ui/views/controls/button/checkbox.h"
++#include "ui/base/resource/resource_bundle.h"
++#include "ui/gfx/color_palette.h"
++#include "ui/gfx/paint_vector_icon.h"
++#include "ui/gfx/text_utils.h"
++#include "ui/native_theme/common_theme.h"
++#include "ui/views/border.h"
++#include "ui/views/controls/button/image_button.h"
++#include "ui/views/controls/image_view.h"
++#include "ui/views/controls/label.h"
++#include "ui/views/controls/link.h"
++#include "ui/views/controls/scroll_view.h"
++#include "ui/views/controls/separator.h"
++#include "ui/views/layout/box_layout.h"
++#include "ui/views/layout/grid_layout.h"
++#include "ui/views/layout/layout_constants.h"
++#include "ui/views/widget/widget.h"
++#include "ui/base/ui_base_types.h"
++#include "ui/gfx/font_list.h"
++#include "components/url_formatter/elide_url.h"
++#include "content/public/browser/web_contents.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
++#include "extensions/common/extension_set.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/constants.h"
++#include "extensions/common/manifest_handlers/icons_handler.h"
++#include "extensions/browser/image_loader.h"
++#include "base/bind.h"
++#include "chrome/browser/extensions/extension_util.h"
++
++namespace {
++  const int kRightColumnWidth = 300;
++  const int kIconSize = 64;
++
++  // Returns gfx::ImageSkia for the default icon.
++  gfx::ImageSkia GetDefaultIconImage(bool is_app) {
++    return  is_app ? extensions::util::GetDefaultAppIcon() : extensions::util::GetDefaultExtensionIcon();
++  }
++}
++
++ExtensionActionPromptView::ExtensionActionPromptView(gfx::NativeWindow parent_window,
++                                                     const base::string16& message,
++                                                     const SensitiveElement& sensitive_element,
++                                                     const GURL& frame_url,
++                                                     const content::WebContentsDelegate::DialogClosedCallback& callback,
++                                                     const extensions::Extension* extension,
++                                                     const gfx::Image& image,
++                                                     bool should_show_dialog)
++                                                   : message_(message),
++                                                     frame_url_(frame_url),
++                                                     callback_(callback),
++                                                     parent_window_(parent_window),
++                                                     extension_(extension),
++                                                     sensitive_element_(sensitive_element) {
++   if (!should_show_dialog) {
++     if (!callback_.is_null()) {
++       base::ResetAndReturn(&callback_).Run(true);
++     }
++     return;
++   }
++
++   // If we only want to show the dialog for sensitive elements and the element
++   // is not sensitive, return the dialog.
++   if (Cache()[key_] == RememberPreference::ALWAYS_ALLOW_IF_NOT_SENSITIVE &&
++       sensitive_element_ == SensitiveElement::NOT_SENSITIVE) {
++     if (!callback_.is_null()) {
++       base::ResetAndReturn(&callback_).Run(true);
++     }
++     return;
++   }
++
++   // If the user choice has been cached, don't display the dialog.
++   key_ = base::UTF8ToUTF16(extension_->name()) + message_;
++   if (Cache()[key_] == RememberPreference::ALWAYS_PREVENT) {
++     if (!callback_.is_null()) {
++       base::ResetAndReturn(&callback_).Run(false);
++     }
++     return;
++   } else if (Cache()[key_] == RememberPreference::ALWAYS_ALLOW) {
++     if (!callback_.is_null()) {
++       base::ResetAndReturn(&callback_).Run(true);
++     }
++     return;
++   }
++
++   SetLayoutManager(new views::BoxLayout(
++       views::BoxLayout::kHorizontal, views::kButtonHEdgeMarginNew,
++       views::kPanelVertMargin, views::kRelatedControlHorizontalSpacing));
++
++   gfx::ImageSkia icon;
++   if (image.IsEmpty()) {
++     icon = GetDefaultIconImage(extension_->is_app());
++   } else {
++     icon = *image.ToImageSkia();
++   }
++
++   views::ImageView* iconView = new views::ImageView();
++   DCHECK_GE(icon.width(), kIconSize);
++   DCHECK_GE(icon.height(), kIconSize);
++   iconView->SetImageSize(gfx::Size(kIconSize, kIconSize));
++   iconView->SetImage(icon);
++   AddChildView(iconView);
++
++   base::string16 url_string =
++       url_formatter::ElideHost(frame_url_, gfx::FontList(), 350);
++   if (url_string.length() > 0) {
++     url_string = base::ASCIIToUTF16(" on the page \"") + url_string;
++   }
++
++   base::string16 sensitive_element_message = base::ASCIIToUTF16("");
++   if (sensitive_element_ == SensitiveElement::SENSITIVE) {
++     sensitive_element_message = base::ASCIIToUTF16("\n\nNote: Action performed on a non-sensitive element");
++   } else if (sensitive_element_ == SensitiveElement::NOT_SENSITIVE) {
++     sensitive_element_message = base::ASCIIToUTF16("\n\nWarning: Action performed on a sensitive element");
++   }
++
++   views::Label* heading_ = new views::Label(
++     base::ASCIIToUTF16("The \"") + base::UTF8ToUTF16(extension_->name()) +
++     base::ASCIIToUTF16("\" extension is attempting to ") + message_ +
++     url_string + base::ASCIIToUTF16("\". Do you want to allow or prevent this action from occuring?") +
++     sensitive_element_message
++   );
++   heading_->SetMultiLine(true);
++   heading_->SetHorizontalAlignment(gfx::ALIGN_LEFT);
++   heading_->SetAllowCharacterBreak(true);
++   heading_->SizeToFit(kRightColumnWidth);
++   AddChildView(heading_);
++
++   constrained_window::CreateBrowserModalDialogViews(this, parent_window_)->Show();
++}
++
++
++void ExtensionActionPromptView::ShouldShowDialogWithImage(content::WebContents* source,
++                                                         gfx::NativeWindow parent_window,
++                                                         const base::string16& message,
++                                                         const SensitiveElement& sensitive_element,
++                                                         const GURL& frame_url,
++                                                         const content::WebContentsDelegate::DialogClosedCallback& callback,
++                                                         const extensions::Extension* extension,
++                                                         const gfx::Image& image,
++                                                         bool should_show_dialog) {
++
++  new ExtensionActionPromptView(parent_window,
++                                message,
++                                sensitive_element,
++                                frame_url,
++                                callback,
++                                extension,
++                                image,
++                                should_show_dialog);
++}
++
++void ExtensionActionPromptView::ShowDialogWithImage(content::WebContents* source,
++                                                    gfx::NativeWindow parent_window,
++                                                    const base::string16& message,
++                                                    const SuspiciousExtensionAction& extension_action,
++                                                    const SensitiveElement& sensitive_element,
++                                                    const GURL& frame_url,
++                                                    const content::WebContentsDelegate::DialogClosedCallback& callback,
++                                                    const extensions::Extension* extension,
++                                                    const gfx::Image& image) {
++
++   (new SuspiciousActionConfig(source->GetBrowserContext()))->IsActionSuspicious(
++     extension->id(),
++     extension_action,
++     base::Bind(
++        &ExtensionActionPromptView::ShouldShowDialogWithImage,
++        source, parent_window, message, sensitive_element, frame_url, callback, extension, image
++     )
++   );
++}
++
++void ExtensionActionPromptView::ShowDialog(content::WebContents* source,
++                                           gfx::NativeWindow parent_window,
++                                           const base::string16& message,
++                                           const SuspiciousExtensionAction& extension_action,
++                                           const SensitiveElement& sensitive_element,
++                                           const GURL& extension_url,
++                                           const GURL& frame_url,
++                                           const content::WebContentsDelegate::DialogClosedCallback& callback) {
++
++   const extensions::Extension* extension = extensions::ExtensionRegistry::Get(
++     source->GetBrowserContext()
++   )->enabled_extensions().GetExtensionOrAppByURL(extension_url);
++
++   // Bookmark apps may not have 128x128 icons so accept 64x64 icons.
++   const int icon_size = extension->from_bookmark()
++                             ? extension_misc::EXTENSION_ICON_SMALL * 2
++                             : extension_misc::EXTENSION_ICON_LARGE;
++   extensions::ExtensionResource image = extensions::IconsInfo::GetIconResource(
++       extension, icon_size, ExtensionIconSet::MATCH_BIGGER);
++
++   // Load the image asynchronously. The response will be sent to OnImageLoaded.
++   extensions::ImageLoader* loader = extensions::ImageLoader::Get(source->GetBrowserContext());
++
++   std::vector<extensions::ImageLoader::ImageRepresentation> images_list;
++   images_list.push_back(extensions::ImageLoader::ImageRepresentation(
++       image,
++       extensions::ImageLoader::ImageRepresentation::NEVER_RESIZE,
++       gfx::Size(),
++       ui::SCALE_FACTOR_100P));
++   loader->LoadImagesAsync(
++     extension, images_list,
++     base::Bind(&ExtensionActionPromptView::ShowDialogWithImage,
++                source, parent_window, message, extension_action, sensitive_element, frame_url, callback, extension)
++   );
++}
++
++ExtensionActionPromptView::~ExtensionActionPromptView() {
++  ExtensionActionPromptView::Cancel();
++}
++
++base::string16 ExtensionActionPromptView::GetDialogButtonLabel(ui::DialogButton button) const {
++  switch (button) {
++    case ui::DIALOG_BUTTON_OK:
++      return base::ASCIIToUTF16("Allow");
++    case ui::DIALOG_BUTTON_CANCEL:
++      return base::ASCIIToUTF16("Prevent");
++    default:
++      NOTREACHED();
++      return base::string16();
++  }
++}
++
++// Cancel prevents extension action
++bool ExtensionActionPromptView::Cancel() {
++  if (!callback_.is_null()) {
++    base::ResetAndReturn(&callback_).Run(false);
++  }
++  return true;
++}
++
++// Close and Accept allow extension action
++bool ExtensionActionPromptView::Close() {
++  if (!callback_.is_null()) {
++    base::ResetAndReturn(&callback_).Run(true);
++  }
++  return true;
++}
++
++// Close and Accept allow extension action
++bool ExtensionActionPromptView::Accept() {
++  if (!callback_.is_null()) {
++    base::ResetAndReturn(&callback_).Run(true);
++  }
++  return true;
++}
++
++bool ExtensionActionPromptView::ShouldShowWindowTitle() const {
++  return true;
++}
++
++base::string16 ExtensionActionPromptView::GetWindowTitle() const {
++  return base::ASCIIToUTF16("Suspicious Extension Action Alert");
++}
++
++bool ExtensionActionPromptView::ShouldDefaultButtonBeBlue() const {
++  return true;
++}
++
++ui::ModalType ExtensionActionPromptView::GetModalType() const {
++  return ui::MODAL_TYPE_WINDOW;
++}
++
++views::View* ExtensionActionPromptView::CreateExtraView() {
++  views::View* checkboxes = new views::View();
++  checkboxes->SetLayoutManager(new views::BoxLayout(views::BoxLayout::kVertical, 0, 0, 0));
++
++  always_allow_non_sensitive_checkbox_ = nullptr;
++  if (sensitive_element_ != SensitiveElement::NOT_APPLICABLE) {
++    always_allow_non_sensitive_checkbox_ = new views::Checkbox(
++      base::ASCIIToUTF16("Always allow for non-sensitive elements")
++    );
++    always_allow_non_sensitive_checkbox_->SetChecked(
++      Cache()[key_] == RememberPreference::ALWAYS_ALLOW_IF_NOT_SENSITIVE
++    );
++    always_allow_non_sensitive_checkbox_->set_listener(this);
++    checkboxes->AddChildView(always_allow_non_sensitive_checkbox_);
++  }
++
++  always_allow_checkbox_ = new views::Checkbox(base::ASCIIToUTF16("Always allow"));
++  always_allow_checkbox_->set_listener(this);
++  checkboxes->AddChildView(always_allow_checkbox_);
++
++  always_prevent_checkbox_ = new views::Checkbox(base::ASCIIToUTF16("Always prevent"));
++  always_prevent_checkbox_->set_listener(this);
++  checkboxes->AddChildView(always_prevent_checkbox_);
++
++  return checkboxes;
++}
++
++void ExtensionActionPromptView::ButtonPressed(views::Button* sender,
++                                              const ui::Event& event) {
++  if (sender == always_allow_non_sensitive_checkbox_) {
++    if (always_allow_non_sensitive_checkbox_->checked()) {
++      Cache()[key_] = RememberPreference::ALWAYS_ALLOW_IF_NOT_SENSITIVE;
++      always_prevent_checkbox_->SetChecked(false);
++      always_prevent_checkbox_->SetState(views::Checkbox::ButtonState::STATE_DISABLED);
++      if (sensitive_element_ == SensitiveElement::NOT_SENSITIVE) {
++        GetDialogClientView()->cancel_button()->SetState(views::LabelButton::ButtonState::STATE_DISABLED);
++      }
++    } else {
++      Cache()[key_] = RememberPreference::DONT_REMEMBER;
++      always_prevent_checkbox_->SetState(views::Checkbox::ButtonState::STATE_NORMAL);
++      GetDialogClientView()->cancel_button()->SetState(views::LabelButton::ButtonState::STATE_NORMAL);
++    }
++  }
++
++  if (sender == always_allow_checkbox_) {
++    if (always_allow_checkbox_->checked()) {
++      Cache()[key_] = RememberPreference::ALWAYS_ALLOW;
++      if (always_allow_non_sensitive_checkbox_ != nullptr) {
++        always_allow_non_sensitive_checkbox_->SetChecked(true);
++        always_allow_non_sensitive_checkbox_->SetState(views::Checkbox::ButtonState::STATE_DISABLED);
++      }
++      always_prevent_checkbox_->SetChecked(false);
++      always_prevent_checkbox_->SetState(views::Checkbox::ButtonState::STATE_DISABLED);
++      GetDialogClientView()->cancel_button()->SetState(views::LabelButton::ButtonState::STATE_DISABLED);
++    } else {
++      Cache()[key_] = RememberPreference::DONT_REMEMBER;
++      if (always_allow_non_sensitive_checkbox_ != nullptr) {
++        always_allow_non_sensitive_checkbox_->SetChecked(false);
++        always_allow_non_sensitive_checkbox_->SetState(views::Checkbox::ButtonState::STATE_NORMAL);
++      }
++      always_prevent_checkbox_->SetState(views::Checkbox::ButtonState::STATE_NORMAL);
++      GetDialogClientView()->cancel_button()->SetState(views::LabelButton::ButtonState::STATE_NORMAL);
++    }
++  }
++
++  if (sender == always_prevent_checkbox_) {
++    if (always_prevent_checkbox_->checked()) {
++      Cache()[key_] = RememberPreference::ALWAYS_PREVENT;
++      if (always_allow_non_sensitive_checkbox_ != nullptr) {
++        always_allow_non_sensitive_checkbox_->SetChecked(false);
++        always_allow_non_sensitive_checkbox_->SetState(views::Checkbox::ButtonState::STATE_DISABLED);
++      }
++      always_allow_checkbox_->SetChecked(false);
++      always_allow_checkbox_->SetState(views::Checkbox::ButtonState::STATE_DISABLED);
++      GetDialogClientView()->ok_button()->SetState(views::LabelButton::ButtonState::STATE_DISABLED);
++    } else {
++      Cache()[key_] = RememberPreference::DONT_REMEMBER;
++      if (always_allow_non_sensitive_checkbox_ != nullptr) {
++        always_allow_non_sensitive_checkbox_->SetState(views::Checkbox::ButtonState::STATE_NORMAL);
++      }
++      always_allow_checkbox_->SetState(views::Checkbox::ButtonState::STATE_NORMAL);
++      GetDialogClientView()->ok_button()->SetState(views::LabelButton::ButtonState::STATE_NORMAL);
++    }
++  }
++}
+diff --git a/chrome/browser/ui/views/extensions/extension_action_prompt_view.h b/chrome/browser/ui/views/extensions/extension_action_prompt_view.h
+new file mode 100644
+index 000000000000..d5c5c043095e
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/extension_action_prompt_view.h
+@@ -0,0 +1,120 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_ACTION_PROMPT_VIEW_H_
++#define CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_ACTION_PROMPT_VIEW_H_
++
++#include <map>
++
++#include "base/macros.h"
++#include "ui/views/view.h"
++#include "ui/views/window/dialog_delegate.h"
++#include "ui/views/window/dialog_client_view.h"
++
++#include "base/memory/weak_ptr.h"
++#include "chrome/browser/ui/views/extensions/suspicious_action_config.h"
++#include "base/logging.h"
++#include "base/macros.h"
++#include "base/memory/ref_counted.h"
++#include "content/public/browser/notification_observer.h"
++#include "content/public/browser/notification_registrar.h"
++#include "ui/gfx/native_widget_types.h"
++#include "ui/views/window/dialog_delegate.h"
++#include "content/public/browser/web_contents_delegate.h"
++#include "extensions/common/extension.h"
++#include "content/public/browser/web_contents.h"
++#include "chrome/browser/profiles/profile.h"
++#include "ui/views/controls/button/checkbox.h"
++
++class ExtensionActionPromptView : public views::DialogDelegateView,
++                                  public views::ButtonListener {
++  public:
++    static void ShowDialog(content::WebContents* source,
++                           gfx::NativeWindow parent_window,
++                           const base::string16& message,
++                           const SuspiciousExtensionAction& extension_action,
++                           const SensitiveElement& sensitive_element,
++                           const GURL& frame_url,
++                           const GURL& extension_url,
++                           const content::WebContentsDelegate::DialogClosedCallback& callback);
++
++
++  private:
++    ExtensionActionPromptView(gfx::NativeWindow parent_window,
++                              const base::string16& message,
++                              const SensitiveElement& sensitive_element,
++                              const GURL& frame_url,
++                              const content::WebContentsDelegate::DialogClosedCallback& callback,
++                              const extensions::Extension* extension,
++                              const gfx::Image& image,
++                              bool should_show_dialog);
++
++    ~ExtensionActionPromptView() override;
++
++    static void ShowDialogWithImage(content::WebContents* source,
++                                    gfx::NativeWindow parent_window,
++                                    const base::string16& message,
++                                    const SuspiciousExtensionAction& extension_action,
++                                    const SensitiveElement& sensitive_element,
++                                    const GURL& frame_url,
++                                    const content::WebContentsDelegate::DialogClosedCallback& callback,
++                                    const extensions::Extension* extension,
++                                    const gfx::Image& image);
++
++    static void ShouldShowDialogWithImage(content::WebContents* source,
++                                          gfx::NativeWindow parent_window,
++                                          const base::string16& message,
++                                          const SensitiveElement& sensitive_element,
++                                          const GURL& frame_url,
++                                          const content::WebContentsDelegate::DialogClosedCallback& callback,
++                                          const extensions::Extension* extension,
++                                          const gfx::Image& image,
++                                          bool should_show_dialog);
++
++    enum class RememberPreference {
++      DONT_REMEMBER,
++      ALWAYS_PREVENT,
++      ALWAYS_ALLOW,
++      ALWAYS_ALLOW_IF_NOT_SENSITIVE,
++    };
++
++    std::map<base::string16, RememberPreference>& Cache() {
++        static std::map<base::string16, RememberPreference> &cache =
++          *new std::map<base::string16, RememberPreference>;
++        return cache;
++    }
++
++    void InitDialog();
++
++    bool Cancel() override;
++    bool Close() override;
++    bool Accept() override;
++    base::string16 GetDialogButtonLabel(ui::DialogButton button) const override;
++    bool ShouldShowWindowTitle() const override;
++    base::string16 GetWindowTitle() const override;
++    bool ShouldDefaultButtonBeBlue() const override;
++    views::View* CreateExtraView() override;
++    ui::ModalType GetModalType() const override;
++    // views::ButtonListener:
++    // This is called when the only_sensitive_checkbox_ is clicked.
++    void ButtonPressed(views::Button* sender, const ui::Event& event) override;
++
++    const base::string16& message_;
++    const GURL& frame_url_;
++    content::WebContentsDelegate::DialogClosedCallback callback_;
++    gfx::NativeWindow parent_window_;
++    const extensions::Extension* extension_;
++
++    const SensitiveElement& sensitive_element_;
++
++    views::Checkbox* always_allow_non_sensitive_checkbox_;
++    views::Checkbox* always_allow_checkbox_;
++    views::Checkbox* always_prevent_checkbox_;
++
++    base::string16 key_;
++
++    DISALLOW_COPY_AND_ASSIGN(ExtensionActionPromptView);
++};
++
++#endif  // CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_ACTION_PROMPT_VIEW_H_
+diff --git a/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.cc b/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.cc
+new file mode 100644
+index 000000000000..87681fc7c119
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.cc
+@@ -0,0 +1,316 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/ui/views/extensions/extension_suspicious_actions_view.h"
++
++#include <stddef.h>
++#include <algorithm>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include "base/memory/weak_ptr.h"
++#include "base/callback_helpers.h"
++#include "base/callback.h"
++#include "base/command_line.h"
++#include "base/compiler_specific.h"
++#include "base/i18n/rtl.h"
++#include "base/macros.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/strings/string_util.h"
++#include "base/strings/utf_string_conversions.h"
++#include "chrome/app/vector_icons/vector_icons.h"
++#include "chrome/browser/browser_process.h"
++#include "chrome/browser/extensions/api/experience_sampling_private/experience_sampling.h"
++#include "chrome/browser/extensions/extension_install_prompt_show_params.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/browser/ui/browser.h"
++#include "chrome/browser/ui/scoped_tabbed_browser_displayer.h"
++#include "chrome/common/extensions/extension_constants.h"
++#include "chrome/grit/generated_resources.h"
++#include "chrome/installer/util/browser_distribution.h"
++#include "components/constrained_window/constrained_window_views.h"
++#include "content/public/browser/browser_thread.h"
++#include "content/public/browser/page_navigator.h"
++#include "content/public/browser/web_contents.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/extension_urls.h"
++#include "ui/base/l10n/l10n_util.h"
++#include "ui/views/controls/button/checkbox.h"
++#include "ui/base/resource/resource_bundle.h"
++#include "ui/gfx/color_palette.h"
++#include "ui/gfx/paint_vector_icon.h"
++#include "ui/gfx/text_utils.h"
++#include "ui/native_theme/common_theme.h"
++#include "ui/views/border.h"
++#include "ui/views/controls/button/image_button.h"
++#include "ui/views/controls/image_view.h"
++#include "ui/views/controls/label.h"
++#include "ui/views/controls/link.h"
++#include "ui/views/controls/scroll_view.h"
++#include "ui/views/controls/separator.h"
++#include "ui/views/layout/box_layout.h"
++#include "ui/views/layout/grid_layout.h"
++#include "ui/views/layout/layout_constants.h"
++#include "ui/views/widget/widget.h"
++#include "ui/base/ui_base_types.h"
++#include "ui/gfx/font_list.h"
++#include "components/url_formatter/elide_url.h"
++#include "content/public/browser/web_contents.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
++#include "extensions/common/extension_set.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/constants.h"
++#include "extensions/common/manifest_handlers/icons_handler.h"
++#include "extensions/browser/image_loader.h"
++#include "base/bind.h"
++#include "chrome/browser/extensions/extension_util.h"
++#include "extensions/browser/state_store.h"
++#include "chrome/browser/extensions/extension_system_impl.h"
++#include "extensions/browser/state_store.h"
++
++namespace {
++  const int kRightColumnWidth = 300;
++  const int kIconSize = 64;
++
++  // Returns gfx::ImageSkia for the default icon.
++  gfx::ImageSkia GetDefaultIconImage(bool is_app) {
++    return  is_app ? extensions::util::GetDefaultAppIcon() : extensions::util::GetDefaultExtensionIcon();
++  }
++}
++
++ExtensionSuspiciousActionsView::ExtensionSuspiciousActionsView(
++    const DialogClosedCallback& callback,
++    content::BrowserContext* browser_context,
++    Profile* profile,
++    content::WebContents* source,
++    const extensions::Extension* extension,
++    const gfx::Image& image)
++  : callback_(callback),
++    extension_(extension) {
++
++  suspicious_action_config_ = new SuspiciousActionConfig(browser_context);
++
++  SetLayoutManager(new views::BoxLayout(views::BoxLayout::kVertical, 0, 0, 0));
++
++  views::View* top = new views::View();
++  top->SetLayoutManager(new views::BoxLayout(
++    views::BoxLayout::kHorizontal, views::kButtonHEdgeMarginNew,
++    views::kPanelVertMargin, views::kRelatedControlHorizontalSpacing
++  ));
++
++  gfx::ImageSkia icon;
++  if (image.IsEmpty()) {
++    icon = GetDefaultIconImage(extension_->is_app());
++  } else {
++    icon = *image.ToImageSkia();
++  }
++
++  views::ImageView* iconView = new views::ImageView();
++  DCHECK_GE(icon.width(), kIconSize);
++  DCHECK_GE(icon.height(), kIconSize);
++  iconView->SetImageSize(gfx::Size(kIconSize, kIconSize));
++  iconView->SetImage(icon);
++  top->AddChildView(iconView);
++
++  views::Label* heading_ = new views::Label(
++    base::ASCIIToUTF16("Chromium intercepts and prompts users to allow or prevent certain extension actions that it considers suspicious. You can optionally configure these actions below for the \"") +
++    base::UTF8ToUTF16(extension_->name()) +
++    base::ASCIIToUTF16("\" extension.\n")
++  );
++  heading_->SetMultiLine(true);
++  heading_->SetHorizontalAlignment(gfx::ALIGN_LEFT);
++  heading_->SetAllowCharacterBreak(true);
++  heading_->SizeToFit(kRightColumnWidth);
++  top->AddChildView(heading_);
++
++  AddChildView(top);
++
++  views::View* bottom = new views::View();
++  bottom->SetLayoutManager(new views::BoxLayout(
++    views::BoxLayout::kVertical, views::kButtonHEdgeMarginNew,
++    0, 0
++  ));
++
++  views::Label* label_ = new views::Label(
++    base::ASCIIToUTF16("Chromium will your ask permission before the extension:\n")
++  );
++  label_->SetFontList(label_->font_list().DeriveWithWeight(gfx::Font::Weight::BOLD));
++
++  label_->SetMultiLine(true);
++  label_->SetHorizontalAlignment(gfx::ALIGN_LEFT);
++  label_->SizeToFit(kRightColumnWidth);
++  bottom->AddChildView(label_);
++
++  event_ = new views::Checkbox(base::ASCIIToUTF16("Fires an event"));
++  InitCheckbox(event_);
++  bottom->AddChildView(event_);
++
++  network_ = new views::Checkbox(base::ASCIIToUTF16("Sends a network request"));
++  InitCheckbox(network_);
++  bottom->AddChildView(network_);
++
++  dom_ = new views::Checkbox(base::ASCIIToUTF16("Adds, removes or replaces an element"));
++  InitCheckbox(dom_);
++  bottom->AddChildView(dom_);
++
++  description_ = new views::Checkbox(base::ASCIIToUTF16("Changes an element's description"));
++  InitCheckbox(description_);
++  bottom->AddChildView(description_);
++
++  reads_ = new views::Checkbox(base::ASCIIToUTF16("Reads data from an element"));
++  InitCheckbox(reads_);
++  bottom->AddChildView(reads_);
++
++  changes_ = new views::Checkbox(base::ASCIIToUTF16("Changes an element's data"));
++  InitCheckbox(changes_);
++  bottom->AddChildView(changes_);
++
++  create_ = new views::Checkbox(base::ASCIIToUTF16("Creates (but does not add) an element"));
++  InitCheckbox(create_);
++  bottom->AddChildView(create_);
++
++  receive_ = new views::Checkbox(base::ASCIIToUTF16("Receives a network response"));
++  InitCheckbox(receive_);
++  bottom->AddChildView(receive_);
++
++  AddChildView(bottom);
++
++  constrained_window::CreateWebModalDialogViews(this, source)->Show();
++}
++
++void ExtensionSuspiciousActionsView::ShowDialogWithImage(
++    const DialogClosedCallback& callback,
++    content::BrowserContext* browser_context,
++    Profile* profile,
++    content::WebContents* source,
++    const extensions::Extension* extension,
++    const gfx::Image& image) {
++   new ExtensionSuspiciousActionsView(
++     callback,
++     browser_context,
++     profile,
++     source,
++     extension,
++     image
++   );
++}
++
++void ExtensionSuspiciousActionsView::ShowDialog(
++    const DialogClosedCallback& callback,
++    content::BrowserContext* browser_context,
++    Profile* profile,
++    content::WebContents* source,
++    const extensions::Extension* extension) {
++
++   // Bookmark apps may not have 128x128 icons so accept 64x64 icons.
++   const int icon_size = extension->from_bookmark()
++                             ? extension_misc::EXTENSION_ICON_SMALL * 2
++                             : extension_misc::EXTENSION_ICON_LARGE;
++   extensions::ExtensionResource image = extensions::IconsInfo::GetIconResource(
++       extension, icon_size, ExtensionIconSet::MATCH_BIGGER);
++
++   // Load the image asynchronously. The response will be sent to OnImageLoaded.
++   extensions::ImageLoader* loader = extensions::ImageLoader::Get(source->GetBrowserContext());
++
++   std::vector<extensions::ImageLoader::ImageRepresentation> images_list;
++   images_list.push_back(extensions::ImageLoader::ImageRepresentation(
++       image,
++       extensions::ImageLoader::ImageRepresentation::NEVER_RESIZE,
++       gfx::Size(),
++       ui::SCALE_FACTOR_100P));
++   loader->LoadImagesAsync(
++     extension, images_list,
++     base::Bind(&ExtensionSuspiciousActionsView::ShowDialogWithImage,
++                callback, browser_context, profile, source, extension)
++   );
++}
++
++ExtensionSuspiciousActionsView::~ExtensionSuspiciousActionsView() {
++  ExtensionSuspiciousActionsView::Cancel();
++}
++
++int ExtensionSuspiciousActionsView::GetDialogButtons() const {
++  return ui::DIALOG_BUTTON_CANCEL;
++}
++
++base::string16 ExtensionSuspiciousActionsView::GetDialogButtonLabel(ui::DialogButton button) const {
++  switch (button) {
++    case ui::DIALOG_BUTTON_CANCEL:
++      return base::ASCIIToUTF16("Close");
++    default:
++      NOTREACHED();
++      return base::string16();
++  }
++}
++
++bool ExtensionSuspiciousActionsView::Cancel() {
++  if (!callback_.is_null()) {
++    base::ResetAndReturn(&callback_).Run();
++  }
++  return true;
++}
++
++bool ExtensionSuspiciousActionsView::Close() {
++  if (!callback_.is_null()) {
++    callback_.Run();
++  }
++  return true;
++}
++
++ui::ModalType ExtensionSuspiciousActionsView::GetModalType() const {
++  return ui::ModalType::MODAL_TYPE_CHILD;
++}
++
++bool ExtensionSuspiciousActionsView::ShouldShowWindowTitle() const {
++  return true;
++}
++
++base::string16 ExtensionSuspiciousActionsView::GetWindowTitle() const {
++  return base::ASCIIToUTF16("Configure Suspicious Actions");
++}
++
++void ExtensionSuspiciousActionsView::ButtonPressed(views::Button* sender,
++                                                   const ui::Event& event) {
++  views::Checkbox* checkbox = (views::Checkbox*) sender;
++  suspicious_action_config_->SetActionSuspicious(
++    extension_->id(),
++    GetExtensionActionForCheckbox(checkbox),
++    checkbox->checked()
++  );
++}
++
++SuspiciousExtensionAction ExtensionSuspiciousActionsView::GetExtensionActionForCheckbox(views::Checkbox* checkbox) {
++  if (checkbox == event_) {
++    return SuspiciousExtensionAction::EVENT;
++  } else if (checkbox == network_) {
++    return SuspiciousExtensionAction::NETWORK_REQUEST;
++  } else if (checkbox == dom_) {
++    return  SuspiciousExtensionAction::DOM_MUTATION;
++  } else if (checkbox == description_) {
++    return SuspiciousExtensionAction::ELEMENT_DESCRIPTION_MUTATION;
++  } else if (checkbox == receive_) {
++    return SuspiciousExtensionAction::NETWORK_RESPONSE;
++  } else if (checkbox == create_) {
++    return SuspiciousExtensionAction::CREATE_ELEMENT;
++  } else if (checkbox == changes_) {
++    return SuspiciousExtensionAction::ELEMENT_MUTATION;
++  } else if (checkbox == reads_) {
++    return SuspiciousExtensionAction::READ_ELEMENT;
++  } else {
++    // Shouldn't get here...
++    return SuspiciousExtensionAction::EVENT;
++  }
++}
++
++void ExtensionSuspiciousActionsView::InitCheckbox(views::Checkbox* checkbox) {
++  checkbox->set_listener(this);
++  SuspiciousExtensionAction action = GetExtensionActionForCheckbox(checkbox);
++  suspicious_action_config_->IsActionSuspicious(
++    extension_->id(),
++    action,
++    base::Bind(&views::Checkbox::SetChecked, base::Unretained(checkbox))
++  );
++}
+diff --git a/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.h b/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.h
+new file mode 100644
+index 000000000000..8daac71b26d4
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/extension_suspicious_actions_view.h
+@@ -0,0 +1,96 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_SUSPICIOUS_ACTIONS_VIEW_H_
++#define CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_SUSPICIOUS_ACTIONS_VIEW_H_
++
++#include <map>
++
++#include "base/macros.h"
++#include "ui/views/view.h"
++#include "ui/views/window/dialog_delegate.h"
++#include "ui/views/window/dialog_client_view.h"
++
++#include "base/memory/weak_ptr.h"
++#include "base/logging.h"
++#include "base/macros.h"
++#include "base/memory/ref_counted.h"
++#include "content/public/browser/notification_observer.h"
++#include "content/public/browser/notification_registrar.h"
++#include "ui/gfx/native_widget_types.h"
++#include "ui/views/window/dialog_delegate.h"
++#include "content/public/browser/web_contents_delegate.h"
++#include "extensions/common/extension.h"
++#include "content/public/browser/web_contents.h"
++#include "chrome/browser/profiles/profile.h"
++#include "ui/views/controls/button/checkbox.h"
++#include "extensions/browser/state_store.h"
++#include "chrome/browser/ui/views/extensions/suspicious_action_config.h"
++
++typedef base::Callback<void()> DialogClosedCallback;
++
++class ExtensionSuspiciousActionsView : public views::DialogDelegateView,
++                                       public views::ButtonListener {
++  public:
++    ExtensionSuspiciousActionsView(const DialogClosedCallback& callback,
++                                   content::BrowserContext* browser_context,
++                                   Profile* profile,
++                                   content::WebContents* source,
++                                   const extensions::Extension* extension,
++                                   const gfx::Image& image);
++
++    ~ExtensionSuspiciousActionsView() override;
++
++    static void ShowDialog(const DialogClosedCallback& callback,
++                           content::BrowserContext* browser_context,
++                           Profile* profile,
++                           content::WebContents* source,
++                           const extensions::Extension* extension);
++
++    static void ShowDialogWithImage(const DialogClosedCallback& callback,
++                                    content::BrowserContext* browser_context,
++                                    Profile* profile,
++                                    content::WebContents* source,
++                                    const extensions::Extension* extension,
++                                    const gfx::Image& image);
++
++  private:
++    void InitDialog();
++
++    bool Cancel() override;
++    bool Close() override;
++    bool ShouldShowWindowTitle() const override;
++    base::string16 GetWindowTitle() const override;
++    ui::ModalType GetModalType() const override;
++    // views::ButtonListener:
++    // This is called when the only_sensitive_checkbox_ is clicked.
++    void ButtonPressed(views::Button* sender, const ui::Event& event) override;
++    int GetDialogButtons() const override;
++    base::string16 GetDialogButtonLabel(ui::DialogButton button) const override;
++
++    void GetExtensionValueCallback(
++      views::Checkbox* checkbox,
++      std::string key,
++      std::unique_ptr<base::Value> value
++    );
++    SuspiciousExtensionAction GetExtensionActionForCheckbox(views::Checkbox*);
++    void InitCheckbox(views::Checkbox* checkbox);
++
++    DialogClosedCallback callback_;
++    const extensions::Extension* extension_;
++    SuspiciousActionConfig* suspicious_action_config_;
++
++    views::Checkbox* event_;
++    views::Checkbox* network_;
++    views::Checkbox* dom_;
++    views::Checkbox* description_;
++    views::Checkbox* receive_;
++    views::Checkbox* reads_;
++    views::Checkbox* changes_;
++    views::Checkbox* create_;
++
++    DISALLOW_COPY_AND_ASSIGN(ExtensionSuspiciousActionsView);
++};
++
++#endif  // CHROME_BROWSER_UI_VIEWS_EXTENSIONS_EXTENSION_SUSPICIOUS_ACTIONS_VIEW_H_
+diff --git a/chrome/browser/ui/views/extensions/suspicious_action_config.cc b/chrome/browser/ui/views/extensions/suspicious_action_config.cc
+new file mode 100644
+index 000000000000..071cb3b52bb4
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/suspicious_action_config.cc
+@@ -0,0 +1,171 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <map>
++#include <stddef.h>
++#include <algorithm>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include "suspicious_action_config.h"
++
++#include "base/memory/weak_ptr.h"
++#include "base/callback_helpers.h"
++#include "base/callback.h"
++#include "base/command_line.h"
++#include "base/compiler_specific.h"
++#include "base/i18n/rtl.h"
++#include "base/macros.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/strings/string_util.h"
++#include "base/strings/utf_string_conversions.h"
++#include "chrome/app/vector_icons/vector_icons.h"
++#include "chrome/browser/browser_process.h"
++#include "chrome/browser/extensions/api/experience_sampling_private/experience_sampling.h"
++#include "chrome/browser/extensions/extension_install_prompt_show_params.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/browser/ui/browser.h"
++#include "chrome/browser/ui/scoped_tabbed_browser_displayer.h"
++#include "chrome/common/extensions/extension_constants.h"
++#include "chrome/grit/generated_resources.h"
++#include "chrome/installer/util/browser_distribution.h"
++#include "components/constrained_window/constrained_window_views.h"
++#include "content/public/browser/browser_thread.h"
++#include "content/public/browser/page_navigator.h"
++#include "content/public/browser/web_contents.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/extension_urls.h"
++#include "ui/base/l10n/l10n_util.h"
++#include "ui/views/controls/button/checkbox.h"
++#include "ui/base/resource/resource_bundle.h"
++#include "ui/gfx/color_palette.h"
++#include "ui/gfx/paint_vector_icon.h"
++#include "ui/gfx/text_utils.h"
++#include "ui/native_theme/common_theme.h"
++#include "ui/views/border.h"
++#include "ui/views/controls/button/image_button.h"
++#include "ui/views/controls/image_view.h"
++#include "ui/views/controls/label.h"
++#include "ui/views/controls/link.h"
++#include "ui/views/controls/scroll_view.h"
++#include "ui/views/controls/separator.h"
++#include "ui/views/layout/box_layout.h"
++#include "ui/views/layout/grid_layout.h"
++#include "ui/views/layout/layout_constants.h"
++#include "ui/views/widget/widget.h"
++#include "ui/base/ui_base_types.h"
++#include "ui/gfx/font_list.h"
++#include "components/url_formatter/elide_url.h"
++#include "content/public/browser/web_contents.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
++#include "extensions/common/extension_set.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/constants.h"
++#include "extensions/common/manifest_handlers/icons_handler.h"
++#include "extensions/browser/image_loader.h"
++#include "base/bind.h"
++#include "chrome/browser/extensions/extension_util.h"
++#include "extensions/browser/state_store.h"
++#include "chrome/browser/extensions/extension_system_impl.h"
++#include "extensions/browser/state_store.h"
++
++namespace {
++
++const char kPromptEvent[] = "prompt_event_fire";
++const char kPromptNetworkRequest[] = "prompt_network_request";
++const char kPromptDomMutation[] = "prompt_dom_mutation";
++const char kPromptElementDescriptionMutation[] = "prompt_description_mutation";
++const char kPromptNetworkResponse[] = "prompt_network_response";
++const char kPromptCreateElement[] = "prompt_create_element";
++const char kPromptReadElement[] = "prompt_read_element"; // just attributes
++const char kPromptElementMutation[] = "prompt_change_element"; // just attributes
++
++}
++
++void SuspiciousActionConfig::IsActionSuspicious(
++  const std::string& extension_id,
++  SuspiciousExtensionAction action,
++  const IsActionSuspiciousCallback& callback) {
++    const char* key = ExtensionActionToString(action);
++    state_store_->RegisterKey(key);
++    state_store_->GetExtensionValue(
++      extension_id,
++      key,
++      base::Bind(
++        &SuspiciousActionConfig::IsActionSuspiciousReadCallBack,
++        base::Unretained(this), extension_id, action, callback
++      )
++    );
++}
++
++void SuspiciousActionConfig::SetActionSuspicious(
++  const std::string& extension_id,
++  SuspiciousExtensionAction action,
++  bool is_suspicious) {
++    state_store_->SetExtensionValue(
++      extension_id,
++      ExtensionActionToString(action),
++      std::unique_ptr<base::Value>(new base::Value(is_suspicious))
++    );
++}
++
++void SuspiciousActionConfig::IsActionSuspiciousReadCallBack(
++  const std::string& extension_id,
++  SuspiciousExtensionAction action,
++  const IsActionSuspiciousCallback& callback,
++  std::unique_ptr<base::Value> value) {
++    if (value) {
++      callback.Run(value->GetBool());
++    } else {
++      bool is_suspicious_by_default = IsActionSuspiciousByDefault(action);
++      SetActionSuspicious(
++        extension_id,
++        action,
++        is_suspicious_by_default
++      );
++      callback.Run(is_suspicious_by_default);
++    }
++}
++
++bool SuspiciousActionConfig::IsActionSuspiciousByDefault(SuspiciousExtensionAction action) {
++  switch (action) {
++    case SuspiciousExtensionAction::EVENT:
++    case SuspiciousExtensionAction::NETWORK_REQUEST:
++    case SuspiciousExtensionAction::DOM_MUTATION:
++    case SuspiciousExtensionAction::ELEMENT_DESCRIPTION_MUTATION:
++      return true;
++    case SuspiciousExtensionAction::READ_ELEMENT:
++    case SuspiciousExtensionAction::ELEMENT_MUTATION:
++    case SuspiciousExtensionAction::CREATE_ELEMENT:
++    case SuspiciousExtensionAction::NETWORK_RESPONSE:
++    case SuspiciousExtensionAction::NAVIGATOR:
++    default:
++      return false;
++  }
++}
++
++const char* SuspiciousActionConfig::ExtensionActionToString(SuspiciousExtensionAction action) {
++  switch (action) {
++    case SuspiciousExtensionAction::EVENT:
++      return kPromptEvent;
++    case SuspiciousExtensionAction::NETWORK_REQUEST:
++      return kPromptNetworkRequest;
++    case SuspiciousExtensionAction::DOM_MUTATION:
++      return kPromptDomMutation;
++    case SuspiciousExtensionAction::ELEMENT_DESCRIPTION_MUTATION:
++      return kPromptElementDescriptionMutation;
++    case SuspiciousExtensionAction::READ_ELEMENT:
++      return kPromptReadElement;
++    case SuspiciousExtensionAction::ELEMENT_MUTATION:
++      return kPromptElementMutation;
++    case SuspiciousExtensionAction::CREATE_ELEMENT:
++      return kPromptCreateElement;
++    case SuspiciousExtensionAction::NETWORK_RESPONSE:
++      return kPromptNetworkResponse;
++    default:
++      return nullptr;
++  }
++}
+diff --git a/chrome/browser/ui/views/extensions/suspicious_action_config.h b/chrome/browser/ui/views/extensions/suspicious_action_config.h
+new file mode 100644
+index 000000000000..0617b1ce7172
+--- /dev/null
++++ b/chrome/browser/ui/views/extensions/suspicious_action_config.h
+@@ -0,0 +1,113 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_UI_VIEWS_EXTENSIONS_SUSPICIOUS_ACTION_CONFIG_VIEW_H_
++#define CHROME_BROWSER_UI_VIEWS_EXTENSIONS_SUSPICIOUS_ACTION_CONFIG_VIEW_H_
++
++#include <map>
++#include <stddef.h>
++#include <algorithm>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include "base/memory/weak_ptr.h"
++#include "base/callback_helpers.h"
++#include "base/callback.h"
++#include "base/command_line.h"
++#include "base/compiler_specific.h"
++#include "base/i18n/rtl.h"
++#include "base/macros.h"
++#include "base/metrics/histogram_macros.h"
++#include "base/strings/string_util.h"
++#include "base/strings/utf_string_conversions.h"
++#include "chrome/app/vector_icons/vector_icons.h"
++#include "chrome/browser/browser_process.h"
++#include "chrome/browser/extensions/api/experience_sampling_private/experience_sampling.h"
++#include "chrome/browser/extensions/extension_install_prompt_show_params.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/browser/ui/browser.h"
++#include "chrome/browser/ui/scoped_tabbed_browser_displayer.h"
++#include "chrome/common/extensions/extension_constants.h"
++#include "chrome/grit/generated_resources.h"
++#include "chrome/installer/util/browser_distribution.h"
++#include "components/constrained_window/constrained_window_views.h"
++#include "content/public/browser/browser_thread.h"
++#include "content/public/browser/page_navigator.h"
++#include "content/public/browser/web_contents.h"
++#include "extensions/common/extension.h"
++#include "extensions/common/extension_urls.h"
++#include "ui/base/l10n/l10n_util.h"
++#include "ui/views/controls/button/checkbox.h"
++#include "ui/base/resource/resource_bundle.h"
++#include "ui/gfx/color_palette.h"
++#include "ui/gfx/paint_vector_icon.h"
++#include "ui/gfx/text_utils.h"
++#include "ui/native_theme/common_theme.h"
++#include "ui/views/border.h"
++#include "ui/views/controls/button/image_button.h"
++#include "ui/views/controls/image_view.h"
++#include "ui/views/controls/label.h"
++#include "ui/views/controls/link.h"
++#include "ui/views/controls/scroll_view.h"
++#include "ui/views/controls/separator.h"
++#include "ui/views/layout/box_layout.h"
++#include "ui/views/layout/grid_layout.h"
++#include "ui/views/layout/layout_constants.h"
++#include "ui/views/widget/widget.h"
++#include "ui/base/ui_base_types.h"
++#include "ui/gfx/font_list.h"
++#include "components/url_formatter/elide_url.h"
++#include "content/public/browser/web_contents.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
++#include "extensions/common/extension_set.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/constants.h"
++#include "extensions/common/manifest_handlers/icons_handler.h"
++#include "extensions/browser/image_loader.h"
++#include "base/bind.h"
++#include "chrome/browser/extensions/extension_util.h"
++#include "extensions/browser/state_store.h"
++#include "chrome/browser/extensions/extension_system_impl.h"
++#include "extensions/browser/state_store.h"
++
++class SuspiciousActionConfig {
++  public:
++    typedef base::Callback<void(bool)> IsActionSuspiciousCallback;
++
++    SuspiciousActionConfig(content::BrowserContext* browser_context) {
++      state_store_ = extensions::ExtensionSystem::Get(browser_context)->state_store();
++    }
++
++    void IsActionSuspicious(
++      const std::string& extension_id,
++      SuspiciousExtensionAction action,
++      const IsActionSuspiciousCallback& callback
++    );
++
++    void SetActionSuspicious(
++      const std::string& extension_id,
++      SuspiciousExtensionAction action,
++      bool is_suspicious
++    );
++
++  private:
++    const char* ExtensionActionToString(SuspiciousExtensionAction action);
++
++    void IsActionSuspiciousReadCallBack(
++      const std::string& extension_id,
++      SuspiciousExtensionAction action,
++      const IsActionSuspiciousCallback& callback,
++      std::unique_ptr<base::Value> value
++    );
++
++    bool IsActionSuspiciousByDefault(SuspiciousExtensionAction action);
++
++    extensions::StateStore* state_store_;
++
++  DISALLOW_COPY_AND_ASSIGN(SuspiciousActionConfig);
++};
++
++#endif  // CHROME_BROWSER_UI_VIEWS_EXTENSIONS_SUSPICIOUS_ACTION_CONFIG_VIEW_H_
+diff --git a/chrome/common/extensions/api/developer_private.idl b/chrome/common/extensions/api/developer_private.idl
+index 2859a6869d82..fc6a6a9e1aae 100644
+--- a/chrome/common/extensions/api/developer_private.idl
++++ b/chrome/common/extensions/api/developer_private.idl
+@@ -525,6 +525,11 @@ namespace developerPrivate {
+     static void showPermissionsDialog(DOMString extensionId,
+                                       optional VoidCallback callback);
+ 
++    // Opens a suspicious actions dialog.
++    // |extensionId| : The id of the extension to show permissions for.
++    static void showSuspiciousActionsDialog(DOMString extensionId,
++                                            optional VoidCallback callback);
++
+     // Reloads a given extension.
+     // |extensionId| : The id of the extension to reload.
+     // |options| : Additional configuration parameters.
+diff --git a/content/browser/frame_host/render_frame_host_delegate.h b/content/browser/frame_host/render_frame_host_delegate.h
+index 5079adfb8c41..b9f471ccafc8 100644
+--- a/content/browser/frame_host/render_frame_host_delegate.h
++++ b/content/browser/frame_host/render_frame_host_delegate.h
+@@ -110,6 +110,14 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
+                                    JavaScriptDialogType type,
+                                    IPC::Message* reply_msg) {}
+ 
++  virtual void DisplayExtensionActionPrompt(RenderFrameHost* render_frame_host,
++                                            const base::string16& message,
++                                            const SuspiciousExtensionAction& extension_action,
++                                            const SensitiveElement& sensitive_element,
++                                            const GURL& extension_url,
++                                            const GURL& frame_url,
++                                            IPC::Message* reply_msg) {}
++
+   virtual void RunBeforeUnloadConfirm(RenderFrameHost* render_frame_host,
+                                       bool is_reload,
+                                       IPC::Message* reply_msg) {}
+diff --git a/content/browser/frame_host/render_frame_host_impl.cc b/content/browser/frame_host/render_frame_host_impl.cc
+index acd26ebd1950..03f73c3b915c 100644
+--- a/content/browser/frame_host/render_frame_host_impl.cc
++++ b/content/browser/frame_host/render_frame_host_impl.cc
+@@ -798,6 +798,8 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
+                         OnJavaScriptExecuteResponse)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_VisualStateResponse,
+                         OnVisualStateResponse)
++    IPC_MESSAGE_HANDLER_DELAY_REPLY(FrameHostMsg_DisplayExtensionActionPrompt,
++                                    OnDisplayExtensionActionPrompt)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_SmartClipDataExtracted,
+                         OnSmartClipDataExtracted)
+     IPC_MESSAGE_HANDLER_DELAY_REPLY(FrameHostMsg_RunJavaScriptDialog,
+@@ -1867,6 +1869,28 @@ void RenderFrameHostImpl::OnRunJavaScriptDialog(
+                                  dialog_type, reply_msg);
+ }
+ 
++void RenderFrameHostImpl::OnDisplayExtensionActionPrompt(
++  const GURL& extension_url,
++  const base::string16& message,
++  const SuspiciousExtensionAction& extension_action,
++  const SensitiveElement& sensitive_element,
++  const GURL& frame_url,
++  IPC::Message* reply_msg) {
++
++  // While a JS message dialog is showing, tabs in the same process shouldn't
++  // process input events.
++  GetProcess()->SetIgnoreInputEvents(true);
++  delegate_->DisplayExtensionActionPrompt(
++    this,
++    message,
++    extension_action,
++    sensitive_element,
++    extension_url,
++    frame_url,
++    reply_msg
++  );
++}
++
+ void RenderFrameHostImpl::OnRunBeforeUnloadConfirm(
+     const GURL& frame_url,
+     bool is_reload,
+@@ -3060,6 +3084,12 @@ void RenderFrameHostImpl::SendJavaScriptDialogReply(
+   Send(reply_msg);
+ }
+ 
++void RenderFrameHostImpl::ExtensionActionPromptClosed(IPC::Message* reply_msg, bool success) {
++  GetProcess()->SetIgnoreInputEvents(false);
++  FrameHostMsg_DisplayExtensionActionPrompt::WriteReplyParams(reply_msg, success);
++  Send(reply_msg);
++}
++
+ // PlzNavigate
+ void RenderFrameHostImpl::CommitNavigation(
+     ResourceResponse* response,
+diff --git a/content/browser/frame_host/render_frame_host_impl.h b/content/browser/frame_host/render_frame_host_impl.h
+index 79bf8c2ceb98..40929d80bbcd 100644
+--- a/content/browser/frame_host/render_frame_host_impl.h
++++ b/content/browser/frame_host/render_frame_host_impl.h
+@@ -467,6 +467,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
+                               bool success,
+                               const base::string16& user_input);
+ 
++  void ExtensionActionPromptClosed(IPC::Message* reply_msg, bool success);
++
+   // Get the accessibility mode from the delegate and Send a message to the
+   // renderer process to change the accessibility mode.
+   void UpdateAccessibilityMode();
+@@ -725,6 +727,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void OnContextMenu(const ContextMenuParams& params);
+   void OnJavaScriptExecuteResponse(int id, const base::ListValue& result);
+   void OnVisualStateResponse(uint64_t id);
++  void OnDisplayExtensionActionPrompt(const GURL& extension_url,
++                                      const base::string16& message,
++                                      const SuspiciousExtensionAction& extension_action,
++                                      const SensitiveElement& sensitive_element,
++                                      const GURL& frame_url,
++                                      IPC::Message* reply_msg);
+   void OnRunJavaScriptDialog(const base::string16& message,
+                              const base::string16& default_prompt,
+                              const GURL& frame_url,
+diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
+index 9a91bc9bb167..f0aff135c31b 100644
+--- a/content/browser/web_contents/web_contents_impl.cc
++++ b/content/browser/web_contents/web_contents_impl.cc
+@@ -4418,6 +4418,29 @@ void WebContentsImpl::RunJavaScriptDialog(RenderFrameHost* render_frame_host,
+   }
+ }
+ 
++void WebContentsImpl::DisplayExtensionActionPrompt(
++  RenderFrameHost* render_frame_host,
++  const base::string16& message,
++  const SuspiciousExtensionAction& extension_action,
++  const SensitiveElement& sensitive_element,
++  const GURL& extension_url,
++  const GURL& frame_url,
++  IPC::Message* reply_msg) {
++  delegate_->ShowExtensionActionPromptView(
++    this,
++    message,
++    extension_action,
++    sensitive_element,
++    extension_url,
++    frame_url,
++    base::Bind(&WebContentsImpl::ExtensionActionPromptClosed,
++               base::Unretained(this),
++               render_frame_host->GetProcess()->GetID(),
++               render_frame_host->GetRoutingID(),
++               reply_msg)
++  );
++}
++
+ void WebContentsImpl::RunBeforeUnloadConfirm(
+     RenderFrameHost* render_frame_host,
+     bool is_reload,
+@@ -5329,6 +5352,19 @@ void WebContentsImpl::OnDialogClosed(int render_process_id,
+   is_showing_before_unload_dialog_ = false;
+ }
+ 
++void WebContentsImpl::ExtensionActionPromptClosed(int render_process_id,
++                                                  int render_frame_id,
++                                                  IPC::Message* reply_msg,
++                                                  bool success) {
++  RenderFrameHostImpl* rfh = RenderFrameHostImpl::FromID(render_process_id, render_frame_id);
++  if (rfh) {
++    rfh->ExtensionActionPromptClosed(reply_msg, success);
++  } else {
++    // Don't leak the sync IPC reply if the RFH or process is gone.
++    delete reply_msg;
++  }
++}
++
+ void WebContentsImpl::SetEncoding(const std::string& encoding) {
+   if (encoding == last_reported_encoding_)
+     return;
+diff --git a/content/browser/web_contents/web_contents_impl.h b/content/browser/web_contents/web_contents_impl.h
+index 2eb11eabb52c..21d14887d0db 100644
+--- a/content/browser/web_contents/web_contents_impl.h
++++ b/content/browser/web_contents/web_contents_impl.h
+@@ -482,6 +482,13 @@ class CONTENT_EXPORT WebContentsImpl
+   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
+   void ShowContextMenu(RenderFrameHost* render_frame_host,
+                        const ContextMenuParams& params) override;
++  void DisplayExtensionActionPrompt(RenderFrameHost* render_frame_host,
++                                    const base::string16& message,
++                                    const SuspiciousExtensionAction& extension_action,
++                                    const SensitiveElement& sensitive_element,
++                                    const GURL& extension_url,
++                                    const GURL& frame_url,
++                                    IPC::Message* reply_msg) override;
+   void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
+                            const base::string16& message,
+                            const base::string16& default_prompt,
+@@ -1007,6 +1014,11 @@ class CONTENT_EXPORT WebContentsImpl
+                       bool success,
+                       const base::string16& user_input);
+ 
++  void ExtensionActionPromptClosed(int render_process_id,
++                                   int render_frame_id,
++                                   IPC::Message* reply_msg,
++                                   bool success);
++
+   // IPC message handlers.
+   void OnThemeColorChanged(RenderFrameHostImpl* source, SkColor theme_color);
+   void OnDidLoadResourceFromMemoryCache(RenderFrameHostImpl* source,
+diff --git a/content/common/frame_messages.h b/content/common/frame_messages.h
+index ca1ed2d0caf8..8e66fa7cc9f9 100644
+--- a/content/common/frame_messages.h
++++ b/content/common/frame_messages.h
+@@ -1463,6 +1463,15 @@ IPC_SYNC_MESSAGE_ROUTED4_2(FrameHostMsg_RunJavaScriptDialog,
+                            bool /* out - success */,
+                            base::string16 /* out - user_input field */)
+ 
++// A request to display a prompt dialog, asking for permission to perform extension action
++IPC_SYNC_MESSAGE_ROUTED5_1(FrameHostMsg_DisplayExtensionActionPrompt,
++                          GURL               /* in - extension url */,
++                          base::string16     /* in - prompt message */,
++                          SuspiciousExtensionAction     /* in - extension action */,
++                          SensitiveElement                /* in - sensitive_element */,
++                          GURL               /* in - originating page URL */,
++                          bool               /* out - success */)
++
+ // Displays a dialog to confirm that the user wants to navigate away from the
+ // page. Replies true if yes, and false otherwise. The reply string is ignored,
+ // but is included so that we can use OnJavaScriptMessageBoxClosed.
+diff --git a/content/public/browser/web_contents_delegate.cc b/content/public/browser/web_contents_delegate.cc
+index 6a368e180796..5bba7cef94f4 100644
+--- a/content/public/browser/web_contents_delegate.cc
++++ b/content/public/browser/web_contents_delegate.cc
+@@ -155,6 +155,14 @@ JavaScriptDialogManager* WebContentsDelegate::GetJavaScriptDialogManager(
+   return nullptr;
+ }
+ 
++void WebContentsDelegate::ShowExtensionActionPromptView(WebContents* source,
++                                                        const base::string16& message,
++                                                        const SuspiciousExtensionAction& extension_action,
++                                                        const SensitiveElement& sensitive_element,
++                                                        const GURL& extension_url,
++                                                        const GURL& frame_url,
++                                                        const DialogClosedCallback& callback) {}
++
+ std::unique_ptr<BluetoothChooser> WebContentsDelegate::RunBluetoothChooser(
+     RenderFrameHost* frame,
+     const BluetoothChooser::EventHandler& event_handler) {
+diff --git a/content/public/browser/web_contents_delegate.h b/content/public/browser/web_contents_delegate.h
+index 232d3a96040b..c89956d346a0 100644
+--- a/content/public/browser/web_contents_delegate.h
++++ b/content/public/browser/web_contents_delegate.h
+@@ -354,6 +354,16 @@ class CONTENT_EXPORT WebContentsDelegate {
+   virtual JavaScriptDialogManager* GetJavaScriptDialogManager(
+       WebContents* source);
+ 
++  typedef base::Callback<void(bool /* success */)> DialogClosedCallback;
++
++  virtual void ShowExtensionActionPromptView(WebContents* source,
++                                             const base::string16& message,
++                                             const SuspiciousExtensionAction& extension_action,
++                                             const SensitiveElement& sensitive_element,
++                                             const GURL& extension_url,
++                                             const GURL& frame_url,
++                                             const DialogClosedCallback& callback);
++
+   // Called when color chooser should open. Returns the opened color chooser.
+   // Returns nullptr if we failed to open the color chooser (e.g. when there is
+   // a ColorChooserDialog already open on Windows). Ownership of the returned
+diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
+index 9243e310abdb..1b525514f150 100644
+--- a/content/renderer/render_frame_impl.cc
++++ b/content/renderer/render_frame_impl.cc
+@@ -4246,6 +4246,18 @@ bool RenderFrameImpl::RunModalPromptDialog(
+   return ok;
+ }
+ 
++bool RenderFrameImpl::DisplayExtensionActionPrompt(const GURL& extension_url,
++                                                   const blink::WebString& message,
++                                                   const SuspiciousExtensionAction& extension_action,
++                                                   const SensitiveElement& sensitive_element) {
++  bool success = true;
++  Send(new FrameHostMsg_DisplayExtensionActionPrompt(
++    routing_id_, extension_url, message.Utf16(), extension_action, sensitive_element,
++    frame_->GetDocument().Url(), &success
++  ));
++  return success;
++}
++
+ bool RenderFrameImpl::RunModalBeforeUnloadDialog(bool is_reload) {
+   // Don't allow further dialogs if we are waiting to swap out, since the
+   // ScopedPageLoadDeferrer in our stack prevents it.
+diff --git a/content/renderer/render_frame_impl.h b/content/renderer/render_frame_impl.h
+index 37c5efccfc51..56294aacde50 100644
+--- a/content/renderer/render_frame_impl.h
++++ b/content/renderer/render_frame_impl.h
+@@ -614,6 +614,10 @@ class CONTENT_EXPORT RenderFrameImpl
+   bool RunModalPromptDialog(const blink::WebString& message,
+                             const blink::WebString& default_value,
+                             blink::WebString* actual_value) override;
++  bool DisplayExtensionActionPrompt(const GURL& extension_url,
++                                    const blink::WebString& message,
++                                    const SuspiciousExtensionAction& extension_action,
++                                    const SensitiveElement& sensitive_element) override;
+   bool RunModalBeforeUnloadDialog(bool is_reload) override;
+   bool RunFileChooser(
+       const blink::WebFileChooserParams& params,
+diff --git a/third_party/WebKit/LayoutTests/platform/mac-retina/external/wpt/IndexedDB/interleaved-cursors-expected.txt b/third_party/WebKit/LayoutTests/platform/mac-retina/external/wpt/IndexedDB/interleaved-cursors-expected.txt
+new file mode 100644
+index 000000000000..96a44b7aa724
+--- /dev/null
++++ b/third_party/WebKit/LayoutTests/platform/mac-retina/external/wpt/IndexedDB/interleaved-cursors-expected.txt
+@@ -0,0 +1,7 @@
++This is a testharness.js-based test.
++PASS 1 cursors 
++PASS 10 cursors 
++FAIL 100 cursors promise_test: Unhandled rejection with value: object "QuotaExceededError: "
++FAIL 500 cursors promise_test: Unhandled rejection with value: object "QuotaExceededError: "
++Harness: the test ran to completion.
++
+diff --git a/third_party/WebKit/PerformanceTests/DOM/append-child.html b/third_party/WebKit/PerformanceTests/DOM/append-child.html
+new file mode 100644
+index 000000000000..8d00bf080854
+--- /dev/null
++++ b/third_party/WebKit/PerformanceTests/DOM/append-child.html
+@@ -0,0 +1,22 @@
++<!DOCTYPE html>
++<body>
++<script src="../resources/runner.js"></script>
++<div id="container"></div>
++<script>
++var container = document.getElementById('container');
++var nodes = [];
++var childCount = 1000;
++for (var i = 0; i < childCount; ++i) {
++    nodes.push(document.createElement('div'));
++}
++
++PerfTestRunner.measureRunsPerSecond({
++    description: 'Measures performance of appending elements to a container element.',
++    run: function() {
++        for (var i = 0; i < childCount; ++i) {
++            container.appendChild(nodes[i]);
++        }
++    }
++});
++</script>
++</body>
+diff --git a/third_party/WebKit/PerformanceTests/DOM/create-element.html b/third_party/WebKit/PerformanceTests/DOM/create-element.html
+new file mode 100644
+index 000000000000..a304dd48ea72
+--- /dev/null
++++ b/third_party/WebKit/PerformanceTests/DOM/create-element.html
+@@ -0,0 +1,16 @@
++<!DOCTYPE html>
++<html>
++<body>
++<script src="../resources/runner.js"></script>
++<script>
++PerfTestRunner.measureTime({
++    description: "Measures performance of creating a DOM element.",
++    run: function() {
++        for (var i = 0; i < 500000; ++i) {
++            document.createElement('div');
++        }
++    }
++});
++</script>
++</body>
++</html>
+diff --git a/third_party/WebKit/PerformanceTests/DOM/set-element-attribute.html b/third_party/WebKit/PerformanceTests/DOM/set-element-attribute.html
+new file mode 100644
+index 000000000000..d19e01113906
+--- /dev/null
++++ b/third_party/WebKit/PerformanceTests/DOM/set-element-attribute.html
+@@ -0,0 +1,25 @@
++<!DOCTYPE html>
++<html>
++<body>
++<script src="../resources/runner.js"></script>
++<script>
++var element;
++
++PerfTestRunner.measureTime({
++    description: "Measures performance of changing a DOM element's className property.",
++
++    setup: function() {
++        element = document.createElement('div');
++        document.body.appendChild(element);
++    },
++
++    run: function() {
++        for (var i = 0; i < 1000; ++i) {
++            element.setAttribute("class", "class1");
++            element.setAttribute("class", "class2");
++        }
++    }
++});
++</script>
++</body>
++</html>
+diff --git a/third_party/WebKit/PerformanceTests/Events/SimpleClickDispatch.html b/third_party/WebKit/PerformanceTests/Events/SimpleClickDispatch.html
+new file mode 100644
+index 000000000000..498fabe585ea
+--- /dev/null
++++ b/third_party/WebKit/PerformanceTests/Events/SimpleClickDispatch.html
+@@ -0,0 +1,23 @@
++<!DOCTYPE html>
++<html>
++<head>
++<script type="text/javascript" src="../resources/runner.js"></script>
++</head>
++<body>
++<script>
++var element;
++PerfTestRunner.measureTime({
++    description: "Measures performance of clicking a DOM element",
++    setup: function() {
++        element = document.createElement('div');
++        document.body.appendChild(element);
++    },
++    run: function() {
++        for (var i = 0; i < 1000; ++i) {
++            element.click();
++        }
++    }
++});
++</script>
++</body>
++</html>
+diff --git a/third_party/WebKit/PerformanceTests/XMLHttpRequest/read-response.html b/third_party/WebKit/PerformanceTests/XMLHttpRequest/read-response.html
+new file mode 100644
+index 000000000000..91a2ef9a77da
+--- /dev/null
++++ b/third_party/WebKit/PerformanceTests/XMLHttpRequest/read-response.html
+@@ -0,0 +1,24 @@
++<!DOCTYPE html>
++<script src="../resources/runner.js"></script>
++<script>
++// Use measureTime instead of runsPerSecond to avoid a ridiculous number of requests in flight.
++// 100 is realistic, 1000 is plausible, but 10000 is crazy.
++PerfTestRunner.measureTime({
++    description: "Measure the time it takes to create, open, send and read 1000 async XMLHttpRequests",
++    run: function() {
++        var xhrs = [];
++        var responses = [];
++        for (var i = 0; i < 1000; ++i) {
++            var xhr = new XMLHttpRequest();
++            xhr.open("GET", "file" + i + ".txt", true);
++            xhr.onreadystatechange = function() {
++                if (xhr.readyState == XMLHttpRequest.DONE) {
++                    responses.push(xhr.responseText);
++                }
++            }
++            xhr.send();
++            xhrs.push(xhr);
++        }
++    },
++});
++</script>
+diff --git a/third_party/WebKit/Source/bindings/core/v8/ScriptPromiseProperty.h b/third_party/WebKit/Source/bindings/core/v8/ScriptPromiseProperty.h
+index 6e095b910ae1..80e1ac9c5fe1 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/ScriptPromiseProperty.h
++++ b/third_party/WebKit/Source/bindings/core/v8/ScriptPromiseProperty.h
+@@ -131,7 +131,7 @@ template <typename PassRejectedType>
+ void ScriptPromiseProperty<HolderType, ResolvedType, RejectedType>::Reject(
+     PassRejectedType value) {
+   if (GetState() != kPending) {
+-    NOTREACHED();
++    //NOTREACHED();
+     return;
+   }
+   if (!GetExecutionContext() || GetExecutionContext()->IsContextDestroyed())
+diff --git a/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.cpp b/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.cpp
+index e8a8543bb382..983844e21e37 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.cpp
++++ b/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.cpp
+@@ -53,6 +53,7 @@ V8AbstractEventListener::V8AbstractEventListener(bool is_attribute,
+       listener_(nullptr),
+       is_attribute_(is_attribute),
+       world_(world),
++      origin_world_(PassRefPtr<DOMWrapperWorld>(world.GetOriginWorld())),
+       isolate_(isolate),
+       worker_global_scope_(nullptr) {
+   if (IsMainThread())
+@@ -95,6 +96,8 @@ void V8AbstractEventListener::handleEvent(ExecutionContext* execution_context,
+ void V8AbstractEventListener::HandleEvent(ScriptState* script_state,
+                                           Event* event) {
+   ScriptState::Scope scope(script_state);
++  // Ensure the origin world gets propagated to the event and is reset afterwards.
++  DOMWrapperWorld::OriginWorldScope worldScope(origin_world_);
+ 
+   // Get the V8 wrapper for the event object.
+   v8::Local<v8::Value> js_event =
+diff --git a/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.h b/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.h
+index a99866ac5344..a2b71123fdb9 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.h
++++ b/third_party/WebKit/Source/bindings/core/v8/V8AbstractEventListener.h
+@@ -147,6 +147,7 @@ class CORE_EXPORT V8AbstractEventListener : public EventListener,
+   bool is_attribute_;
+ 
+   RefPtr<DOMWrapperWorld> world_;
++  RefPtr<DOMWrapperWorld> origin_world_;
+   v8::Isolate* isolate_;
+ 
+   // nullptr unless this listener belongs to a worker.
+diff --git a/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.cpp b/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.cpp
+index 3b4360254fd6..8cecee68f9c8 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.cpp
++++ b/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.cpp
+@@ -40,7 +40,10 @@ V8MutationCallback::V8MutationCallback(v8::Local<v8::Function> callback,
+                                        v8::Local<v8::Object> owner,
+                                        ScriptState* script_state)
+     : callback_(script_state->GetIsolate(), this, callback),
+-      script_state_(script_state) {
++      script_state_(script_state),
++      origin_world_(PassRefPtr<DOMWrapperWorld>(
++        DOMWrapperWorld::Current(v8::Isolate::GetCurrent()).GetOriginWorld())
++      ) {
+   V8PrivateProperty::GetMutationObserverCallback(script_state->GetIsolate())
+       .Set(owner, callback);
+ }
+@@ -51,6 +54,8 @@ void V8MutationCallback::Call(
+     const HeapVector<Member<MutationRecord>>& mutations,
+     MutationObserver* observer) {
+   v8::Isolate* isolate = script_state_->GetIsolate();
++  // Ensure the origin world gets propagated to the event and is reset afterwards.
++  DOMWrapperWorld::OriginWorldScope worldScope(origin_world_);
+   ExecutionContext* execution_context =
+       ExecutionContext::From(script_state_.Get());
+   if (!execution_context || execution_context->IsContextSuspended() ||
+diff --git a/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.h b/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.h
+index cdb7f0efb122..b40180226fda 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.h
++++ b/third_party/WebKit/Source/bindings/core/v8/V8MutationCallback.h
+@@ -64,6 +64,7 @@ class V8MutationCallback final : public MutationCallback {
+ 
+   TraceWrapperV8Reference<v8::Function> callback_;
+   RefPtr<ScriptState> script_state_;
++  RefPtr<DOMWrapperWorld> origin_world_;
+ };
+ 
+ }  // namespace blink
+diff --git a/third_party/WebKit/Source/bindings/core/v8/V8ScriptRunner.cpp b/third_party/WebKit/Source/bindings/core/v8/V8ScriptRunner.cpp
+index cca9ab4a16dd..101bef9350e0 100644
+--- a/third_party/WebKit/Source/bindings/core/v8/V8ScriptRunner.cpp
++++ b/third_party/WebKit/Source/bindings/core/v8/V8ScriptRunner.cpp
+@@ -656,6 +656,11 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
+   ScopedFrameBlamer frame_blamer(frame);
+   TRACE_EVENT0("v8", "v8.callFunction");
+ 
++  // Ensure the origin world gets propagated to the event and is reset afterwards.
++  DOMWrapperWorld::OriginWorldScope worldScope(PassRefPtr<DOMWrapperWorld>(
++    DOMWrapperWorld::Current(v8::Isolate::GetCurrent()).GetOriginWorld()
++  ));
++
+   int depth = v8::MicrotasksScope::GetCurrentDepth(isolate);
+   if (depth >= kMaxRecursionDepth)
+     return v8::MaybeLocal<v8::Value>(
+diff --git a/third_party/WebKit/Source/core/dom/ContainerNode.cpp b/third_party/WebKit/Source/core/dom/ContainerNode.cpp
+index d151f86379fc..234b4fd8f2b8 100644
+--- a/third_party/WebKit/Source/core/dom/ContainerNode.cpp
++++ b/third_party/WebKit/Source/core/dom/ContainerNode.cpp
+@@ -55,6 +55,7 @@
+ #include "core/probe/CoreProbes.h"
+ #include "platform/EventDispatchForbiddenScope.h"
+ #include "platform/ScriptForbiddenScope.h"
++#include "url/gurl.h"
+ 
+ namespace blink {
+ 
+@@ -117,7 +118,7 @@ DISABLE_CFI_PERF
+ bool ContainerNode::CheckAcceptChild(const Node* new_child,
+                                      const Node* old_child,
+                                      ExceptionState& exception_state) const {
+-  // Not mentioned in spec: throw NotFoundError if newChild is null
++  // Not mentioned in spec: throw NotFoundError if new_child is null
+   if (!new_child) {
+     exception_state.ThrowDOMException(kNotFoundError,
+                                       "The new child element is null.");
+@@ -156,8 +157,8 @@ bool ContainerNode::CheckAcceptChildGuaranteedNodeTypes(
+   if (IsDocumentNode())
+     return ToDocument(this)->CanAcceptChild(new_child, old_child,
+                                             exception_state);
+-  // Skip containsIncludingHostElements() if !newChild.parentNode() &&
+-  // isConnected(). |newChild| typically has no parentNode(), and it means
++  // Skip containsIncludingHostElements() if !new_child.parentNode() &&
++  // isConnected(). |new_child| typically has no parentNode(), and it means
+   // it's !isConnected(). In such case, the contains check for connected
+   // |this| is unnecessary.
+   if (new_child.IsContainerNode() &&
+@@ -301,6 +302,29 @@ Node* ContainerNode::InsertBefore(Node* new_child,
+     return new_child;
+   DCHECK(new_child);
+ 
++  bool sensitiveElement = false;
++  AtomicString message = "insert a new ";
++  if (new_child->IsElementNode()) {
++      sensitiveElement = ToElement(new_child)->isSensitive();
++      if (ToElement(new_child)->hasDescription()) {
++        message = message +  "\"" + ToElement(new_child)->getDescription() + "\"";
++      } else {
++        message = message + "element";
++      }
++  } else {
++    message = message + "element";
++  }
++  if (isConnected() && !Document::eligibleExtensionAction(
++      GetDocument().GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::DOM_MUTATION,
++      sensitiveElement ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE
++    )) {
++      exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++      return nullptr;
++  }
++
+   NodeVector targets;
+   if (!CollectChildrenAndRemoveFromOldParentWithCheck(
+           ref_child, nullptr, *new_child, targets, exception_state))
+@@ -378,7 +402,7 @@ void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
+     return;
+ 
+   // FIXME: parserRemoveChild can run script which could then insert the
+-  // newChild back into the page. Loop until the child is actually removed.
++  // new_child back into the page. Loop until the child is actually removed.
+   // See: fast/parser/execute-script-during-adoption-agency-removal.html
+   while (ContainerNode* parent = new_child->parentNode())
+     parent->ParserRemoveChild(*new_child);
+@@ -432,6 +456,38 @@ Node* ContainerNode::ReplaceChild(Node* new_child,
+     return nullptr;
+   }
+ 
++  bool sensitiveElement = false;
++  AtomicString message = "replace ";
++  if (old_child->IsElementNode()) {
++      sensitiveElement = ToElement(old_child)->isSensitive();
++      if (ToElement(old_child)->hasDescription()) {
++        message = message +  "a \"" + ToElement(old_child)->getDescription() + "\" ";
++      } else {
++        message = message + "an element with ";
++      }
++  } else {
++    message = message + "an element with ";
++  }
++  if (new_child->IsElementNode()) {
++      if (ToElement(new_child)->hasDescription()) {
++        message = message +  "a \"" + ToElement(new_child)->getDescription() + "\"";
++      } else {
++        message = message + "another element";
++      }
++  } else {
++    message = message + "another element";
++  }
++  if (isConnected() && !Document::eligibleExtensionAction(
++      GetDocument().GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::DOM_MUTATION,
++      sensitiveElement ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE
++    )) {
++      exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++      return nullptr;
++  }
++
+   // 7. Let reference child be child’s next sibling.
+   Node* next = old_child->nextSibling();
+   // 8. If reference child is node, set it to node’s next sibling.
+@@ -578,6 +634,29 @@ Node* ContainerNode::RemoveChild(Node* old_child,
+     return nullptr;
+   }
+ 
++  bool sensitiveElement = false;
++  AtomicString message = "remove ";
++  if (old_child->IsElementNode()) {
++      sensitiveElement = ToElement(old_child)->isSensitive();
++      if (ToElement(old_child)->hasDescription()) {
++        message = message +  "a \"" + ToElement(old_child)->getDescription() + "\"";
++      } else {
++        message = message + "an element";
++      }
++  } else {
++    message = message + "an element";
++  }
++  if (isConnected() && !Document::eligibleExtensionAction(
++      GetDocument().GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::DOM_MUTATION,
++      sensitiveElement ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE
++    )) {
++      exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++      return nullptr;
++  }
++
+   {
+     HTMLFrameOwnerElement::UpdateSuspendScope suspend_widget_hierarchy_updates;
+     DocumentOrderedMap::RemoveScope tree_remove_scope;
+@@ -701,6 +780,31 @@ Node* ContainerNode::AppendChild(Node* new_child,
+     return new_child;
+   DCHECK(new_child);
+ 
++  bool sensitiveElement = false;
++  AtomicString message = "insert a new ";
++  if (new_child->IsElementNode()) {
++      sensitiveElement = ToElement(new_child)->isSensitive();
++      if (ToElement(new_child)->hasDescription()) {
++        message = message +  "\"" + ToElement(new_child)->getDescription() + "\"";
++      } else {
++        message = message + "element";
++      }
++  } else {
++    message = message + "element";
++  }
++  if (isConnected() && !Document::eligibleExtensionAction(
++      GetDocument().GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::DOM_MUTATION,
++      sensitiveElement ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE
++    )) {
++      exception_state.ThrowDOMException(
++         kNoModificationAllowedError, "This action has been prevented."
++      );
++      return nullptr;
++  }
++
+   NodeVector targets;
+   if (!CollectChildrenAndRemoveFromOldParentWithCheck(
+           nullptr, nullptr, *new_child, targets, exception_state))
+@@ -720,7 +824,7 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
+     return;
+ 
+   // FIXME: parserRemoveChild can run script which could then insert the
+-  // newChild back into the page. Loop until the child is actually removed.
++  // new_child back into the page. Loop until the child is actually removed.
+   // See: fast/parser/execute-script-during-adoption-agency-removal.html
+   while (ContainerNode* parent = new_child->parentNode())
+     parent->ParserRemoveChild(*new_child);
+@@ -1558,6 +1662,38 @@ NodeListsNodeData& ContainerNode::EnsureNodeLists() {
+   return EnsureRareData().EnsureNodeLists();
+ }
+ 
++// Adds all sensitive data within the node (including it's children) to the
++// SensitiveData HashSet
++void ContainerNode::markSensitiveDataAsRead(ContainerNode& node, bool only_children) {
++  // If only_children is true, only add sensitive data from the node's children
++  // and not the node itself.
++  if (!only_children) {
++    // If the element is not sensitive, there is no sensitive data
++    if (!ToElement(node).isSensitive()) {
++      return;
++    }
++    markAttributesAsRead(ToElement(node));
++  }
++  for (Node* child = node.firstChild(); child; child = child->nextSibling()) {
++    if (!child->IsElementNode()) {
++      continue;
++    } else if (child->IsContainerNode()) {
++      markSensitiveDataAsRead(*blink::ToContainerNode(child), false);
++    } else {
++      markAttributesAsRead(*ToElement(child));
++    }
++  }
++}
++
++// Adds all attribute values to the SensitiveData HashSet
++void ContainerNode::markAttributesAsRead(Element& element) {
++  for (AttributeCollection::iterator it = element.Attributes().begin() ;
++       it != element.Attributes().end();
++       ++it) {
++    element.SensitiveData().insert(it->Value());
++  }
++}
++
+ #if DCHECK_IS_ON()
+ bool ChildAttachedAllowedWhenAttachingChildren(ContainerNode* node) {
+   if (node->IsShadowRoot())
+diff --git a/third_party/WebKit/Source/core/dom/ContainerNode.h b/third_party/WebKit/Source/core/dom/ContainerNode.h
+index 7fb310bf7daf..2bb9670ee0c5 100644
+--- a/third_party/WebKit/Source/core/dom/ContainerNode.h
++++ b/third_party/WebKit/Source/core/dom/ContainerNode.h
+@@ -32,6 +32,7 @@
+ #include "platform/bindings/ScriptWrappableVisitor.h"
+ #include "platform/wtf/Vector.h"
+ #include "public/platform/WebFocusType.h"
++#include "core/dom/AttributeCollection.h"
+ 
+ namespace blink {
+ 
+@@ -115,6 +116,7 @@ class CORE_EXPORT ContainerNode : public Node {
+   Node* ReplaceChild(Node* new_child,
+                      Node* old_child,
+                      ExceptionState& = ASSERT_NO_EXCEPTION);
++
+   Node* RemoveChild(Node* child, ExceptionState& = ASSERT_NO_EXCEPTION);
+   Node* AppendChild(Node* new_child, ExceptionState& = ASSERT_NO_EXCEPTION);
+ 
+@@ -332,6 +334,9 @@ class CORE_EXPORT ContainerNode : public Node {
+   // CDATA_SECTION_NODE, TEXT_NODE or COMMENT_NODE has changed its value.
+   virtual void ChildrenChanged(const ChildrenChange&);
+ 
++  void markAttributesAsRead(Element& element);
++  void markSensitiveDataAsRead(ContainerNode& node, bool only_children);
++
+   DECLARE_VIRTUAL_TRACE();
+ 
+   DECLARE_VIRTUAL_TRACE_WRAPPERS();
+diff --git a/third_party/WebKit/Source/core/dom/Document.cpp b/third_party/WebKit/Source/core/dom/Document.cpp
+index ecf025f9b8bb..b81f87200e46 100644
+--- a/third_party/WebKit/Source/core/dom/Document.cpp
++++ b/third_party/WebKit/Source/core/dom/Document.cpp
+@@ -258,6 +258,14 @@
+ #include "public/platform/WebAddressSpace.h"
+ #include "public/platform/WebPrerenderingSupport.h"
+ #include "public/platform/modules/sensitive_input_visibility/sensitive_input_visibility_service.mojom-blink.h"
++#include "public/web/WebFrameClient.h"
++#include "web/WebFrameWidgetImpl.h"
++#include "web/WebLocalFrameImpl.h"
++#include "core/page/Page.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
++#include "platform/wtf/text/CString.h"
++#include "platform/wtf/text/StringBuilder.h"
+ #include "public/platform/site_engagement.mojom-blink.h"
+ 
+ #include <memory>
+@@ -752,6 +760,18 @@ Element* Document::createElement(const LocalDOMWindow* window,
+     return nullptr;
+   }
+ 
++  AtomicString message = "create an element";
++  if (!Document::eligibleExtensionAction(
++      GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::CREATE_ELEMENT,
++      SensitiveElement::NOT_APPLICABLE)
++    ) {
++    exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++    return nullptr;
++  }
++
+   if (IsXHTMLDocument() || IsHTMLDocument()) {
+     // 2. If the context object is an HTML document, let localName be
+     // converted to ASCII lowercase.
+@@ -4291,8 +4311,8 @@ bool Document::SetFocusedElement(Element* new_focused_element,
+   }
+ 
+   if (!focus_change_blocked && focused_element_) {
+-    // Create the AXObject cache in a focus change because Chromium relies on
+-    // it.
++    // Create the AXObjectImpl cache in a focus change because Chromium relies
++    // on it.
+     if (AXObjectCache* cache = AxObjectCache())
+       cache->HandleFocusedUIElementChanged(old_focused_element,
+                                            new_focused_element);
+@@ -6787,6 +6807,68 @@ void Document::RecordDeferredLoadReason(WouldLoadReason reason) {
+   would_load_reason_ = reason;
+ }
+ 
++bool Document::eligibleExtensionAction(LocalFrame* frame,
++                                       const String& message,
++                                       const String& additional_information,
++                                       const SuspiciousExtensionAction& extension_action,
++                                       const SensitiveElement& sensitive_element) {
++  v8::Isolate* isolate = v8::Isolate::GetCurrent();
++  if (isolate->InContext()) {
++    v8::Local<v8::Context> context = isolate->GetCurrentContext();
++    if (!context.IsEmpty()) {
++      // Determine what world we are currently executing in
++      DOMWrapperWorld& world = DOMWrapperWorld::World(context);
++      if (world.IsOfIsolatedWorldOrigin()) {
++        // Need to save the result of utf8 on stack or it will be free'd
++        CString cs = world.GetOriginWorld()
++                          ->IsolatedWorldSecurityOrigin()
++                          ->ToString().Utf8();
++        GURL* extension_url = new GURL(base::StringPiece(cs.data()));
++        Page* page = frame != nullptr ? frame->GetPage() : nullptr;
++        if (page && !page->GetChromeClient().DisplayExtensionActionPrompt(*extension_url,
++                                                                          frame,
++                                                                          message,
++                                                                          // additional_information,
++                                                                          extension_action,
++                                                                          sensitive_element)) {
++          return false;
++        }
++      }
++    }
++  }
++  // By default, we should allow operations that haven't been prevented by the user
++  return true;
++}
++
++bool Document::eligibleExtensionActionTwo(LocalFrame* frame,
++                                       const String& message,
++                                       const String& additional_information,
++                                       const SuspiciousExtensionAction& extension_action,
++                                       const SensitiveElement& sensitive_element,
++                                       const GURL& extension_url) {
++  Page* page = frame->GetPage();
++  return !(page && !page->GetChromeClient().DisplayExtensionActionPrompt(extension_url,
++                                                                    frame,
++                                                                    message,
++                                                                    // additional_information,
++                                                                    extension_action,
++                                                                    sensitive_element));
++}
++
++bool Document::isExtensionAction() {
++  v8::Isolate* isolate = v8::Isolate::GetCurrent();
++  if (isolate->InContext()) {
++    v8::Local<v8::Context> context = isolate->GetCurrentContext();
++    if (!context.IsEmpty()) {
++       DOMWrapperWorld& world = DOMWrapperWorld::World(context);
++       if (world.IsOfIsolatedWorldOrigin()) {
++         return true;
++       }
++    }
++  }
++  return false;
++}
++
+ DEFINE_TRACE_WRAPPERS(Document) {
+   // node_lists_ are traced in their corresponding NodeListsNodeData, keeping
+   // them only alive for live nodes. Otherwise we would keep lists of dead
+diff --git a/third_party/WebKit/Source/core/dom/Document.h b/third_party/WebKit/Source/core/dom/Document.h
+index 0f79aedd8474..e6bca0e6eb71 100644
+--- a/third_party/WebKit/Source/core/dom/Document.h
++++ b/third_party/WebKit/Source/core/dom/Document.h
+@@ -65,6 +65,7 @@
+ #include "platform/wtf/PassRefPtr.h"
+ #include "public/platform/WebFocusType.h"
+ #include "public/platform/WebInsecureRequestPolicy.h"
++#include "url/gurl.h"
+ 
+ namespace blink {
+ 
+@@ -261,6 +262,22 @@ class CORE_EXPORT Document : public ContainerNode,
+   static Document* Create(const DocumentInit& initializer = DocumentInit()) {
+     return new Document(initializer);
+   }
++
++  static bool eligibleExtensionAction(LocalFrame* frame,
++                                      const String& message,
++                                      const String& additional_information,
++                                      const SuspiciousExtensionAction& extension_action,
++                                      const SensitiveElement& sensitive_element);
++
++  static bool eligibleExtensionActionTwo(LocalFrame* frame,
++                                         const String& message,
++                                         const String& additional_information,
++                                         const SuspiciousExtensionAction& extension_action,
++                                         const SensitiveElement& sensitive_element,
++                                         const GURL& extension_url);
++
++  static bool isExtensionAction();
++
+   ~Document() override;
+ 
+   MediaQueryMatcher& GetMediaQueryMatcher();
+diff --git a/third_party/WebKit/Source/core/dom/Document.idl b/third_party/WebKit/Source/core/dom/Document.idl
+index ec933ed0215d..b7e0ae0c506f 100644
+--- a/third_party/WebKit/Source/core/dom/Document.idl
++++ b/third_party/WebKit/Source/core/dom/Document.idl
+@@ -120,6 +120,8 @@ interface Document : Node {
+     [CallWith=EnteredWindow, CEReactions, CustomElementCallbacks, RaisesException] void write(DOMString... text);
+     [CallWith=EnteredWindow, CEReactions, CustomElementCallbacks, RaisesException] void writeln(DOMString... text);
+ 
++    boolean isExtensionAction();
++
+     // user interaction
+     readonly attribute Window? defaultView;
+     boolean hasFocus();
+diff --git a/third_party/WebKit/Source/core/dom/Element.cpp b/third_party/WebKit/Source/core/dom/Element.cpp
+index af710a5670f2..206e3bba2893 100644
+--- a/third_party/WebKit/Source/core/dom/Element.cpp
++++ b/third_party/WebKit/Source/core/dom/Element.cpp
+@@ -420,8 +420,27 @@ const AtomicString& Element::getAttribute(const QualifiedName& name) const {
+   if (!GetElementData())
+     return g_null_atom;
+   SynchronizeAttribute(name);
+-  if (const Attribute* attribute = GetElementData()->Attributes().Find(name))
++  if (const Attribute* attribute = GetElementData()->Attributes().Find(name)) {
++    AtomicString message = "read the \"" + name.LocalName() + "\" attribute of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    AtomicString additional_information = "value: \"" + attribute->Value() + "\"";
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        additional_information,
++        SuspiciousExtensionAction::ELEMENT_MUTATION,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++      return g_null_atom;
++    }
++    if (isSensitive()) {
++      SensitiveData().insert(attribute->Value());
++    }
+     return attribute->Value();
++  }
+   return g_null_atom;
+ }
+ 
+@@ -1222,14 +1241,32 @@ AccessibleNode* Element::accessibleNode() {
+   return rare_data.EnsureAccessibleNode(this);
+ }
+ 
+-const AtomicString& Element::getAttribute(
+-    const AtomicString& local_name) const {
++const AtomicString& Element::getAttribute(const AtomicString& local_name) const {
+   if (!GetElementData())
+     return g_null_atom;
+   SynchronizeAttribute(local_name);
+   if (const Attribute* attribute =
+-          GetElementData()->Attributes().Find(LowercaseIfNecessary(local_name)))
++          GetElementData()->Attributes().Find(LowercaseIfNecessary(local_name))) {
++    AtomicString message = "read the \"" + local_name + "\" attribute of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    AtomicString additional_information = "value: \"" + attribute->Value() + "\"";
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        additional_information,
++        SuspiciousExtensionAction::READ_ELEMENT,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++      return g_null_atom;
++    }
++    if (isSensitive()) {
++      SensitiveData().insert(attribute->Value());
++    }
+     return attribute->Value();
++  }
+   return g_null_atom;
+ }
+ 
+@@ -1252,6 +1289,49 @@ void Element::setAttribute(const AtomicString& local_name,
+   SynchronizeAttribute(local_name);
+   AtomicString case_adjusted_local_name = LowercaseIfNecessary(local_name);
+ 
++  if (Document::isExtensionAction() && local_name == "data-sensitive") {
++    exception_state.ThrowDOMException(
++      kNoModificationAllowedError,
++      "This action has been prevented."
++    );
++    return;
++  } else if (isConnected() && local_name == "data-description") {
++    AtomicString message = "change the description of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    AtomicString additional_information = "description: \"" + value + "\"";
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        additional_information,
++        SuspiciousExtensionAction::ELEMENT_DESCRIPTION_MUTATION,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++      exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++      return;
++    }
++  } else {
++    AtomicString message =
++      "change the \"" + local_name + "\" of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    AtomicString additional_information = "value: \"" + value + "\"";
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        *(new String()),
++        SuspiciousExtensionAction::ELEMENT_MUTATION,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++      exception_state.ThrowDOMException(kNoModificationAllowedError, "This action has been prevented.");
++      return;
++    }
++  }
++
+   if (!GetElementData()) {
+     SetAttributeInternal(
+         kNotFound,
+@@ -2636,6 +2716,40 @@ void Element::removeAttribute(const AtomicString& name) {
+   if (!GetElementData())
+     return;
+ 
++  if (isConnected() && name == "data-sensitive") {
++    return;
++  } else if (isConnected() && name == "data-description") {
++    AtomicString message = "remove the description of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        *(new String()),
++        SuspiciousExtensionAction::ELEMENT_DESCRIPTION_MUTATION,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++      return;
++    }
++  } else {
++    AtomicString message = "remove the " + name + " attribute of ";
++    if (hasDescription()) {
++      message = message + "a \"" + getDescription() + "\"";
++    } else {
++      message = message + "an element";
++    }
++    if (!Document::eligibleExtensionAction(
++        GetDocument().GetFrame(),
++        message,
++        *(new String()),
++        SuspiciousExtensionAction::ELEMENT_MUTATION,
++        isSensitive() ? SensitiveElement::SENSITIVE : SensitiveElement::NOT_SENSITIVE)) {
++       return;
++    }
++  }
++
+   AtomicString local_name = LowercaseIfNecessary(name);
+   size_t index = GetElementData()->Attributes().FindIndex(local_name);
+   if (index == kNotFound) {
+@@ -2684,6 +2798,36 @@ bool Element::hasAttribute(const AtomicString& local_name) const {
+              LowercaseIfNecessary(local_name)) != kNotFound;
+ }
+ 
++bool Element::hasDescription() const {
++  if (hasAttribute("data-description")) {
++    return true;
++  }
++  Element* parent = parentElement();
++  if (parent != nullptr) {
++    return parent->hasDescription();
++  }
++  return false;
++}
++
++const AtomicString& Element::getDescription() const {
++  assert(hasDescription());
++  if (hasAttribute("data-description")) {
++    return getAttribute("data-description");
++  }
++  return parentElement()->getDescription();
++}
++
++bool Element::isSensitive() const {
++  if (hasAttribute("data-sensitive")) {
++    return true;
++  }
++  Element* parent = parentElement();
++  if (parent != nullptr) {
++    return parent->isSensitive();
++  }
++  return false;
++}
++
+ bool Element::hasAttributeNS(const AtomicString& namespace_uri,
+                              const AtomicString& local_name) const {
+   if (!GetElementData())
+@@ -2896,11 +3040,13 @@ void Element::DispatchFocusOutEvent(
+                          new_focused_element, source_capabilities));
+ }
+ 
+-String Element::innerHTML() const {
++String Element::innerHTML() {
++  markSensitiveDataAsRead(*this, true);
+   return CreateMarkup(this, kChildrenOnly);
+ }
+ 
+-String Element::outerHTML() const {
++String Element::outerHTML() {
++  markSensitiveDataAsRead(*this, false);
+   return CreateMarkup(this);
+ }
+ 
+diff --git a/third_party/WebKit/Source/core/dom/Element.h b/third_party/WebKit/Source/core/dom/Element.h
+index 692a3816dcd4..bc30a0f5034a 100644
+--- a/third_party/WebKit/Source/core/dom/Element.h
++++ b/third_party/WebKit/Source/core/dom/Element.h
+@@ -38,6 +38,7 @@
+ #include "platform/heap/Handle.h"
+ #include "platform/scroll/ScrollTypes.h"
+ #include "public/platform/WebFocusType.h"
++#include "platform/wtf/HashSet.h"
+ 
+ namespace blink {
+ 
+@@ -140,6 +141,11 @@ class CORE_EXPORT Element : public ContainerNode {
+   DEFINE_ATTRIBUTE_EVENT_LISTENER(wheel);
+ 
+   bool hasAttribute(const QualifiedName&) const;
++
++  bool hasDescription() const;
++  const AtomicString& getDescription() const;
++  bool isSensitive() const;
++
+   const AtomicString& getAttribute(const QualifiedName&) const;
+ 
+   // Passing nullAtom as the second parameter removes the attribute when calling
+@@ -586,8 +592,8 @@ class CORE_EXPORT Element : public ContainerNode {
+ 
+   virtual String innerText();
+   String outerText();
+-  String innerHTML() const;
+-  String outerHTML() const;
++  String innerHTML();
++  String outerHTML();
+   void setInnerHTML(const String&, ExceptionState& = ASSERT_NO_EXCEPTION);
+   void setOuterHTML(const String&, ExceptionState&);
+ 
+@@ -795,6 +801,11 @@ class CORE_EXPORT Element : public ContainerNode {
+   EnsureResizeObserverData();
+   void SetNeedsResizeObserverUpdate();
+ 
++  static HashSet<String>& SensitiveData() {
++    static HashSet<String> &sensitive_data = *new HashSet<String>;
++    return sensitive_data;
++  }
++
+  protected:
+   Element(const QualifiedName& tag_name, Document*, ConstructionType);
+ 
+diff --git a/third_party/WebKit/Source/core/dom/Element.idl b/third_party/WebKit/Source/core/dom/Element.idl
+index 47867a1e87d2..beb6716d6222 100644
+--- a/third_party/WebKit/Source/core/dom/Element.idl
++++ b/third_party/WebKit/Source/core/dom/Element.idl
+@@ -43,6 +43,9 @@ interface Element : Node {
+     [RuntimeEnabled=PointerEvent] boolean hasPointerCapture (long pointerId);
+ 
+     boolean hasAttributes();
++
++    boolean isSensitive();
++
+     [SameObject, PerWorldBindings, ImplementedAs=attributesForBindings] readonly attribute NamedNodeMap attributes;
+     DOMString? getAttribute(DOMString name);
+     DOMString? getAttributeNS(DOMString? namespaceURI, DOMString localName);
+diff --git a/third_party/WebKit/Source/core/dom/Node.cpp b/third_party/WebKit/Source/core/dom/Node.cpp
+index 75a14c126049..f0273ff33ed8 100644
+--- a/third_party/WebKit/Source/core/dom/Node.cpp
++++ b/third_party/WebKit/Source/core/dom/Node.cpp
+@@ -453,6 +453,15 @@ Node* Node::appendChild(Node* new_child, ExceptionState& exception_state) {
+   return nullptr;
+ }
+ 
++Node* Node::appendChildNoPrompt(Node* newChild, ExceptionState& exception_state) {
++  if (IsContainerNode())
++    return ToContainerNode(this)->appendChildNoPrompt(newChild, exception_state);
++
++  exception_state.ThrowDOMException(
++      kHierarchyRequestError, "This node type does not support this method.");
++  return nullptr;
++}
++
+ static bool IsNodeInNodes(const Node* const node,
+                           const HeapVector<NodeOrString>& nodes) {
+   for (const NodeOrString& node_or_string : nodes) {
+diff --git a/third_party/WebKit/Source/core/dom/Node.h b/third_party/WebKit/Source/core/dom/Node.h
+index 93ca10f01e11..cdeaea5f8221 100644
+--- a/third_party/WebKit/Source/core/dom/Node.h
++++ b/third_party/WebKit/Source/core/dom/Node.h
+@@ -274,6 +274,8 @@ class CORE_EXPORT Node : public EventTarget {
+   Node* removeChild(Node* child, ExceptionState& = ASSERT_NO_EXCEPTION);
+   Node* appendChild(Node* new_child, ExceptionState& = ASSERT_NO_EXCEPTION);
+ 
++  Node* appendChildNoPrompt(Node* newChild, ExceptionState& = ASSERT_NO_EXCEPTION);
++
+   bool hasChildren() const { return firstChild(); }
+   virtual Node* cloneNode(bool deep, ExceptionState& = ASSERT_NO_EXCEPTION) = 0;
+   void normalize();
+diff --git a/third_party/WebKit/Source/core/dom/ScriptLoader.cpp b/third_party/WebKit/Source/core/dom/ScriptLoader.cpp
+index 6672d5d0cc23..9fdd2d173bcc 100644
+--- a/third_party/WebKit/Source/core/dom/ScriptLoader.cpp
++++ b/third_party/WebKit/Source/core/dom/ScriptLoader.cpp
+@@ -69,6 +69,7 @@ ScriptLoader::ScriptLoader(ScriptElementBase* element,
+                            bool already_started,
+                            bool created_during_document_write)
+     : element_(element),
++      origin_world_(nullptr),
+       start_line_number_(WTF::OrdinalNumber::BeforeFirst()),
+       have_fired_load_(false),
+       will_be_parser_executed_(false),
+@@ -527,6 +528,14 @@ bool ScriptLoader::PrepareScript(const TextPosition& script_start_position,
+   // - |m_readyToBeParserExecuted|
+   // TODO(hiroshige): Clean up the dependency.
+ 
++  // Store the origin to apply when the script is done loading, as the script
++  // could be loaded in the main world.
++  if (v8::Isolate::GetCurrent()->InContext()) {
++    origin_world_ = PassRefPtr<DOMWrapperWorld>(
++      DOMWrapperWorld::Current(v8::Isolate::GetCurrent()).GetOriginWorld()
++    );
++  }
++
+   // 1st Clause:
+   // - "If the script's type is "classic", and
+   //    the element has a src attribute, and the element has a defer attribute,
+@@ -840,6 +849,9 @@ bool ScriptLoader::DoExecuteScript(const Script* script) {
+       return false;
+   }
+ 
++  // Ensure the origin world gets propagated to the script and is reset afterwards.
++  DOMWrapperWorld::OriginWorldScope worldScope(origin_world_);
++
+   const bool is_imported_script = context_document != element_document;
+ 
+   // 3. "If the script is from an external file,
+diff --git a/third_party/WebKit/Source/core/dom/ScriptLoader.h b/third_party/WebKit/Source/core/dom/ScriptLoader.h
+index 862d0a57c468..5c868dfa7594 100644
+--- a/third_party/WebKit/Source/core/dom/ScriptLoader.h
++++ b/third_party/WebKit/Source/core/dom/ScriptLoader.h
+@@ -30,6 +30,7 @@
+ #include "platform/wtf/text/TextPosition.h"
+ #include "platform/wtf/text/WTFString.h"
+ #include "public/platform/WebURLRequest.h"
++#include "platform/bindings/DOMWrapperWorld.h"
+ 
+ namespace blink {
+ 
+@@ -169,6 +170,7 @@ class CORE_EXPORT ScriptLoader : public GarbageCollectedFinalized<ScriptLoader>,
+   void PendingScriptFinished(PendingScript*) override;
+ 
+   Member<ScriptElementBase> element_;
++  RefPtr<DOMWrapperWorld> origin_world_;
+   Member<ScriptResource> resource_;
+   WTF::OrdinalNumber start_line_number_;
+ 
+diff --git a/third_party/WebKit/Source/core/events/EventDispatcher.cpp b/third_party/WebKit/Source/core/events/EventDispatcher.cpp
+index 8aa5627b6d96..dd9b78287a08 100644
+--- a/third_party/WebKit/Source/core/events/EventDispatcher.cpp
++++ b/third_party/WebKit/Source/core/events/EventDispatcher.cpp
+@@ -30,6 +30,7 @@
+ #include "core/dom/ContainerNode.h"
+ #include "core/dom/Document.h"
+ #include "core/dom/Element.h"
++#include "core/dom/ClientRect.h"
+ #include "core/events/EventDispatchMediator.h"
+ #include "core/events/MouseEvent.h"
+ #include "core/events/ScopedEventQueue.h"
+@@ -43,6 +44,12 @@
+ #include "core/inspector/InspectorTraceEvents.h"
+ #include "platform/EventDispatchForbiddenScope.h"
+ #include "platform/instrumentation/tracing/TraceEvent.h"
++#include "public/web/WebFrameClient.h"
++#include "web/WebFrameWidgetImpl.h"
++#include "web/WebLocalFrameImpl.h"
++#include "core/page/Page.h"
++#include "base/strings/string_piece.h"
++#include "url/gurl.h"
+ #include "platform/wtf/RefPtr.h"
+ 
+ namespace blink {
+@@ -130,6 +137,37 @@ DispatchEventResult EventDispatcher::Dispatch() {
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("blink.debug"),
+                "EventDispatcher::dispatch");
+ 
++  // Consider moving this somewhere else to speed up
++  HashSet<String>* whitelisted_events = new HashSet<String>();
++  whitelisted_events->insert("readystatechange");
++  whitelisted_events->insert("DOMActivate");
++  whitelisted_events->insert("DOMContentLoaded");
++  whitelisted_events->insert("load"); // Should this be whitelisted?
++
++  if (!whitelisted_events->Contains(event_->type()) && Document::isExtensionAction()) {
++    bool sensitiveElement = false;
++    AtomicString message = "dispatch a \"" + event_->type() + "\" event";
++    if (GetNode().IsElementNode()) {
++        sensitiveElement = ToElement(GetNode()).isSensitive();
++        if (ToElement(GetNode()).hasDescription()) {
++          message = message + " on a " + "\"" + ToElement(GetNode()).getDescription() + "\"";
++        }
++    }
++    if (!Document::eligibleExtensionAction(&(view_->GetFrame()),
++                                           message,
++                                           *(new String()),
++                                           SuspiciousExtensionAction::EVENT,
++                                           sensitiveElement ?
++                                            SensitiveElement::SENSITIVE :
++                                            SensitiveElement::NOT_SENSITIVE
++                                          )) {
++      return DispatchEventResult::kCanceledBeforeDispatch;
++    }
++  }
++
++  // Delete HashSet
++  delete whitelisted_events;
++
+ #if DCHECK_IS_ON()
+   DCHECK(!event_dispatched_);
+   event_dispatched_ = true;
+diff --git a/third_party/WebKit/Source/core/frame/DOMTimer.cpp b/third_party/WebKit/Source/core/frame/DOMTimer.cpp
+index 40d6a6c3a2f4..ab91762e69cd 100644
+--- a/third_party/WebKit/Source/core/frame/DOMTimer.cpp
++++ b/third_party/WebKit/Source/core/frame/DOMTimer.cpp
+@@ -81,6 +81,12 @@ DOMTimer::DOMTimer(ExecutionContext* context,
+       timeout_id_(timeout_id),
+       nesting_level_(context->Timers()->TimerNestingLevel() + 1),
+       action_(action) {
++  // Store the creating worldId, as the timer is fired in the main world.
++  ASSERT(v8::Isolate::GetCurrent()->InContext());
++  origin_world_ = PassRefPtr<DOMWrapperWorld>(DOMWrapperWorld::Current(
++    v8::Isolate::GetCurrent()).GetOriginWorld()
++  );
++
+   ASSERT(timeout_id > 0);
+   if (ShouldForwardUserGesture(interval, nesting_level_)) {
+     // Thread safe because shouldForwardUserGesture will only return true if
+@@ -139,6 +145,8 @@ void DOMTimer::Fired() {
+   // Only the first execution of a multi-shot timer should get an affirmative
+   // user gesture indicator.
+   UserGestureIndicator gesture_indicator(std::move(user_gesture_token_));
++  // Ensure the origin world is propagated to the action and is reset afterwards.
++  DOMWrapperWorld::OriginWorldScope worldScope(origin_world_);
+ 
+   TRACE_EVENT1("devtools.timeline", "TimerFire", "data",
+                InspectorTimerFireEvent::Data(context, timeout_id_));
+diff --git a/third_party/WebKit/Source/core/frame/DOMTimer.h b/third_party/WebKit/Source/core/frame/DOMTimer.h
+index 1109819b1a2a..a5fc27e354a5 100644
+--- a/third_party/WebKit/Source/core/frame/DOMTimer.h
++++ b/third_party/WebKit/Source/core/frame/DOMTimer.h
+@@ -89,6 +89,7 @@ class CORE_EXPORT DOMTimer final : public GarbageCollectedFinalized<DOMTimer>,
+   int nesting_level_;
+   Member<ScheduledAction> action_;
+   RefPtr<UserGestureToken> user_gesture_token_;
++  RefPtr<DOMWrapperWorld> origin_world_;
+ };
+ 
+ }  // namespace blink
+diff --git a/third_party/WebKit/Source/core/loader/EmptyClients.h b/third_party/WebKit/Source/core/loader/EmptyClients.h
+index f5253cbfca6e..9d4f4ecc702b 100644
+--- a/third_party/WebKit/Source/core/loader/EmptyClients.h
++++ b/third_party/WebKit/Source/core/loader/EmptyClients.h
+@@ -163,6 +163,16 @@ class CORE_EXPORT EmptyChromeClient : public ChromeClient {
+     return false;
+   }
+ 
++  bool DisplayExtensionActionPromptDelegate(
++    const GURL&,
++    LocalFrame*,
++    const String&,
++    const SuspiciousExtensionAction&,
++    const SensitiveElement&
++  ) override {
++    return true;
++  }
++  
+   bool HasOpenedPopup() const override { return false; }
+   PopupMenu* OpenPopupMenu(LocalFrame&, HTMLSelectElement&) override;
+   PagePopup* OpenPagePopup(PagePopupClient*) override { return nullptr; }
+diff --git a/third_party/WebKit/Source/core/loader/NavigationScheduler.cpp b/third_party/WebKit/Source/core/loader/NavigationScheduler.cpp
+index 8a421693d8e5..103b96bbe023 100644
+--- a/third_party/WebKit/Source/core/loader/NavigationScheduler.cpp
++++ b/third_party/WebKit/Source/core/loader/NavigationScheduler.cpp
+@@ -166,16 +166,25 @@ class ScheduledURLNavigation : public ScheduledNavigation {
+                             is_location_change),
+         url_(url),
+         should_check_main_world_content_security_policy_(
+-            kCheckContentSecurityPolicy) {
++            kCheckContentSecurityPolicy),
++        origin_world_(nullptr) {
+     if (ContentSecurityPolicy::ShouldBypassMainWorld(origin_document)) {
+       should_check_main_world_content_security_policy_ =
+           kDoNotCheckContentSecurityPolicy;
+     }
++    // Store the world id of the frame requesting the navigation in case it's a 'javascript:...' url.
++    if (v8::Isolate::GetCurrent()->InContext()) {
++      origin_world_ = PassRefPtr<DOMWrapperWorld>(
++        DOMWrapperWorld::Current(v8::Isolate::GetCurrent()).GetOriginWorld()
++      );
++    }
+   }
+ 
+   void Fire(LocalFrame* frame) override {
+     std::unique_ptr<UserGestureIndicator> gesture_indicator =
+         CreateUserGestureIndicator();
++    // Ensure the origin world gets propagated to the navigation and is reset afterwards.
++    DOMWrapperWorld::OriginWorldScope worldScope(origin_world_);
+     FrameLoadRequest request(OriginDocument(), ResourceRequest(url_), "_self",
+                              should_check_main_world_content_security_policy_);
+     request.SetReplacesCurrentItem(ReplacesCurrentItem());
+@@ -194,6 +203,7 @@ class ScheduledURLNavigation : public ScheduledNavigation {
+   KURL url_;
+   ContentSecurityPolicyDisposition
+       should_check_main_world_content_security_policy_;
++  RefPtr<DOMWrapperWorld> origin_world_;
+ };
+ 
+ class ScheduledRedirect final : public ScheduledURLNavigation {
+diff --git a/third_party/WebKit/Source/core/page/ChromeClient.cpp b/third_party/WebKit/Source/core/page/ChromeClient.cpp
+index de6af36341fd..b834c7311c9a 100644
+--- a/third_party/WebKit/Source/core/page/ChromeClient.cpp
++++ b/third_party/WebKit/Source/core/page/ChromeClient.cpp
+@@ -35,6 +35,7 @@
+ #include "platform/geometry/IntRect.h"
+ #include "platform/network/NetworkHints.h"
+ #include "public/platform/WebScreenInfo.h"
++#include <algorithm>
+ 
+ namespace blink {
+ 
+@@ -159,6 +160,25 @@ bool ChromeClient::OpenJavaScriptPrompt(LocalFrame* frame,
+       });
+ }
+ 
++bool ChromeClient::DisplayExtensionActionPrompt(const GURL& extension_url,
++                                                LocalFrame* frame,
++                                                const String& message,
++                                                const SuspiciousExtensionAction& extension_action,
++                                                const SensitiveElement& sensitive_element) {
++  ASSERT(frame);
++  // Suspend pages in case the client method runs a new event loop that would
++  // otherwise cause the load to continue while we're in the middle of
++  // executing JavaScript.
++  ScopedPageSuspender suspender;
++  return DisplayExtensionActionPromptDelegate(
++    extension_url,
++    frame,
++    message,
++    extension_action,
++    sensitive_element
++  );
++}
++
+ void ChromeClient::MouseDidMoveOverElement(LocalFrame& frame,
+                                            const HitTestResult& result) {
+   if (!result.GetScrollbar() && result.InnerNode() &&
+diff --git a/third_party/WebKit/Source/core/page/ChromeClient.h b/third_party/WebKit/Source/core/page/ChromeClient.h
+index 303c656e9428..ece4cea5b5c7 100644
+--- a/third_party/WebKit/Source/core/page/ChromeClient.h
++++ b/third_party/WebKit/Source/core/page/ChromeClient.h
+@@ -45,6 +45,8 @@
+ #include "public/platform/WebDragOperation.h"
+ #include "public/platform/WebEventListenerProperties.h"
+ #include "public/platform/WebFocusType.h"
++#include <memory>
++#include "url/gurl.h"
+ 
+ // To avoid conflicts with the CreateWindow macro from the Windows SDK...
+ #undef CreateWindow
+@@ -183,6 +185,13 @@ class CORE_EXPORT ChromeClient : public PlatformChromeClient {
+                             const String& message,
+                             const String& default_value,
+                             String& result);
++  bool DisplayExtensionActionPrompt(
++    const GURL&,
++    LocalFrame*,
++    const String&,
++    const SuspiciousExtensionAction&,
++    const SensitiveElement&
++  );
+   virtual void SetStatusbarText(const String&) = 0;
+   virtual bool TabsToLinks() = 0;
+ 
+@@ -386,6 +395,12 @@ class CORE_EXPORT ChromeClient : public PlatformChromeClient {
+                                             const String& message,
+                                             const String& default_value,
+                                             String& result) = 0;
++  virtual bool DisplayExtensionActionPromptDelegate(
++    const GURL&,
++    LocalFrame*,
++    const String&,
++    const SuspiciousExtensionAction&,
++    const SensitiveElement&) = 0;
+   virtual void PrintDelegate(LocalFrame*) = 0;
+ 
+  private:
+diff --git a/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.cpp b/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.cpp
+index 561ff2d1b3e1..1b13dd732e75 100644
+--- a/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.cpp
++++ b/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.cpp
+@@ -24,6 +24,8 @@
+ #include "core/xmlhttprequest/XMLHttpRequest.h"
+ 
+ #include <memory>
++#include <set>
++
+ #include "bindings/core/v8/ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrURLSearchParams.h"
+ #include "bindings/core/v8/ArrayBufferOrArrayBufferViewOrBlobOrUSVString.h"
+ #include "bindings/core/v8/ExceptionState.h"
+@@ -81,8 +83,8 @@
+ #include "platform/wtf/Assertions.h"
+ #include "platform/wtf/AutoReset.h"
+ #include "platform/wtf/StdLibExtras.h"
+-#include "platform/wtf/text/CString.h"
+ #include "public/platform/WebURLRequest.h"
++#include "platform/wtf/HashSet.h"
+ 
+ namespace blink {
+ 
+@@ -253,7 +255,8 @@ XMLHttpRequest::XMLHttpRequest(
+       downloading_to_file_(false),
+       response_text_overflow_(false),
+       send_flag_(false),
+-      response_array_buffer_failure_(false) {}
++      response_array_buffer_failure_(false),
++      can_extension_read_response_(ReadResponsePermission::kPromptUser) {}
+ 
+ XMLHttpRequest::~XMLHttpRequest() {}
+ 
+@@ -273,6 +276,13 @@ XMLHttpRequest::State XMLHttpRequest::readyState() const {
+ }
+ 
+ ScriptString XMLHttpRequest::responseText(ExceptionState& exception_state) {
++  if (!CanExtensionReadResponse()) {
++    exception_state.ThrowSecurityError(
++        "Refused to read response from '" + url_.ElidedString() +
++        "' because a user has prevented it.");
++    return ScriptString();
++  }
++
+   if (response_type_code_ != kResponseTypeDefault &&
+       response_type_code_ != kResponseTypeText) {
+     exception_state.ThrowDOMException(kInvalidStateError,
+@@ -321,6 +331,13 @@ void XMLHttpRequest::InitResponseDocument() {
+ }
+ 
+ Document* XMLHttpRequest::responseXML(ExceptionState& exception_state) {
++  if (!CanExtensionReadResponse()) {
++    exception_state.ThrowSecurityError(
++        "Refused to read response from '" + url_.ElidedString() +
++        "' because a user has prevented it.");
++    return nullptr;
++  }
++
+   if (response_type_code_ != kResponseTypeDefault &&
+       response_type_code_ != kResponseTypeDocument) {
+     exception_state.ThrowDOMException(kInvalidStateError,
+@@ -478,6 +495,10 @@ void XMLHttpRequest::setResponseType(const String& response_type,
+ }
+ 
+ String XMLHttpRequest::responseType() {
++  if (!CanExtensionReadResponse()) {
++    return "";
++  }
++
+   switch (response_type_code_) {
+     case kResponseTypeDefault:
+       return "";
+@@ -496,6 +517,10 @@ String XMLHttpRequest::responseType() {
+ }
+ 
+ String XMLHttpRequest::responseURL() {
++  if (!CanExtensionReadResponse()) {
++    return "";
++  }
++
+   KURL response_url(response_.Url());
+   if (!response_url.IsNull())
+     response_url.RemoveFragmentIdentifier();
+@@ -520,6 +545,7 @@ void XMLHttpRequest::TrackProgress(long long length) {
+ 
+ void XMLHttpRequest::ChangeState(State new_state) {
+   if (state_ != new_state) {
++    can_extension_read_response_ = ReadResponsePermission::kPromptUser;
+     state_ = new_state;
+     DispatchReadyStateChangeEvent();
+   }
+@@ -754,7 +780,11 @@ void XMLHttpRequest::send(Document* document, ExceptionState& exception_state) {
+   DCHECK(document);
+ 
+   if (!InitSend(exception_state))
+-    return;
++      return;
++
++  VLOG(1) << "send() Document";
++  if (!XMLHttpRequest::CanSend(document->xmlEncoding(), exception_state))
++      return;
+ 
+   RefPtr<EncodedFormData> http_body;
+ 
+@@ -781,6 +811,10 @@ void XMLHttpRequest::send(const String& body, ExceptionState& exception_state) {
+   if (!InitSend(exception_state))
+     return;
+ 
++  VLOG(1) << "send() String";
++  if (!XMLHttpRequest::CanSend(body, exception_state))
++      return;
++
+   RefPtr<EncodedFormData> http_body;
+ 
+   if (!body.IsNull() && AreMethodAndURLValidForSend()) {
+@@ -798,6 +832,11 @@ void XMLHttpRequest::send(Blob* body, ExceptionState& exception_state) {
+   if (!InitSend(exception_state))
+     return;
+ 
++  VLOG(1) << "send() Blob";
++  // TODO
++  if (!XMLHttpRequest::CanSend(*(new String()), exception_state))
++      return;
++
+   RefPtr<EncodedFormData> http_body;
+ 
+   if (AreMethodAndURLValidForSend()) {
+@@ -833,6 +872,11 @@ void XMLHttpRequest::send(FormData* body, ExceptionState& exception_state) {
+   if (!InitSend(exception_state))
+     return;
+ 
++  VLOG(1) << "send() FormData";
++  // TODO
++  if (!XMLHttpRequest::CanSend(*(new String()), exception_state))
++      return;
++
+   RefPtr<EncodedFormData> http_body;
+ 
+   if (AreMethodAndURLValidForSend()) {
+@@ -858,6 +902,11 @@ void XMLHttpRequest::send(URLSearchParams* body,
+   if (!InitSend(exception_state))
+     return;
+ 
++  VLOG(1) << "send() URLSearchParams";
++  // TODO
++  if (!XMLHttpRequest::CanSend(*(new String()), exception_state))
++      return;
++
+   RefPtr<EncodedFormData> http_body;
+ 
+   if (AreMethodAndURLValidForSend()) {
+@@ -873,6 +922,11 @@ void XMLHttpRequest::send(DOMArrayBuffer* body,
+                           ExceptionState& exception_state) {
+   NETWORK_DVLOG(1) << this << " send() ArrayBuffer " << body;
+ 
++  VLOG(1) << "send() ArrayBuffer";
++  // TODO
++  if (!XMLHttpRequest::CanSend(*(new String()), exception_state))
++      return;
++
+   SendBytesData(body->Data(), body->ByteLength(), exception_state);
+ }
+ 
+@@ -880,6 +934,11 @@ void XMLHttpRequest::send(DOMArrayBufferView* body,
+                           ExceptionState& exception_state) {
+   NETWORK_DVLOG(1) << this << " send() ArrayBufferView " << body;
+ 
++  VLOG(1) << "send() ArrayBufferView";
++  // TODO
++  if (!XMLHttpRequest::CanSend(*(new String()), exception_state))
++      return;
++
+   SendBytesData(body->BaseAddress(), body->byteLength(), exception_state);
+ }
+ 
+@@ -1375,7 +1434,11 @@ const AtomicString& XMLHttpRequest::GetRequestHeader(
+   return request_headers_.Get(name);
+ }
+ 
+-String XMLHttpRequest::getAllResponseHeaders() const {
++String XMLHttpRequest::getAllResponseHeaders() {
++  if (!CanExtensionReadResponse()) {
++    return "";
++  }
++
+   if (state_ < kHeadersReceived || error_)
+     return "";
+ 
+@@ -1414,7 +1477,11 @@ String XMLHttpRequest::getAllResponseHeaders() const {
+ }
+ 
+ const AtomicString& XMLHttpRequest::getResponseHeader(
+-    const AtomicString& name) const {
++    const AtomicString& name) {
++  if (!CanExtensionReadResponse()) {
++    return g_null_atom;
++  }
++
+   if (state_ < kHeadersReceived || error_)
+     return g_null_atom;
+ 
+@@ -1485,7 +1552,11 @@ bool XMLHttpRequest::ResponseIsHTML() const {
+   return DeprecatedEqualIgnoringCase(FinalResponseMIMEType(), "text/html");
+ }
+ 
+-int XMLHttpRequest::status() const {
++int XMLHttpRequest::status() {
++  if (!CanExtensionReadResponse()) {
++    return -1;
++  }
++
+   if (state_ == kUnsent || state_ == kOpened || error_)
+     return 0;
+ 
+@@ -1495,7 +1566,11 @@ int XMLHttpRequest::status() const {
+   return 0;
+ }
+ 
+-String XMLHttpRequest::statusText() const {
++String XMLHttpRequest::statusText() {
++  if (!CanExtensionReadResponse()) {
++    return "";
++  }
++
+   if (state_ == kUnsent || state_ == kOpened || error_)
+     return String();
+ 
+@@ -1872,6 +1947,52 @@ ExecutionContext* XMLHttpRequest::GetExecutionContext() const {
+   return SuspendableObject::GetExecutionContext();
+ }
+ 
++bool XMLHttpRequest::CanExtensionReadResponse() {
++  if (can_extension_read_response_ != ReadResponsePermission::kPromptUser) {
++    return can_extension_read_response_ == ReadResponsePermission::kAllow;
++  }
++
++  AtomicString message = "read a network response to " + url_.GetString();
++  bool eligible_extension_action =  Document::eligibleExtensionAction(
++    GetDocument()->GetFrame(),
++    message,
++    *(new String()),
++    SuspiciousExtensionAction::NETWORK_RESPONSE,
++    SensitiveElement::NOT_APPLICABLE
++  );
++  can_extension_read_response_ = eligible_extension_action ?
++                                 ReadResponsePermission::kAllow :
++                                 ReadResponsePermission::kDisallow;
++  return eligible_extension_action;
++}
++
++bool XMLHttpRequest::CanSend(String data, ExceptionState& exception_state) {
++  bool is_sensitive = false;
++  for (HashSet<String>::iterator it = Element::SensitiveData().begin() ;
++       it != Element::SensitiveData().end();
++       ++it) {
++    if (data.Contains(*it, TextCaseSensitivity::kTextCaseUnicodeInsensitive)) {
++      is_sensitive = true;
++      break;
++    }
++  }
++
++  AtomicString message = "send a network request to \"" + url_.GetString() + "\"";
++  if (!Document::eligibleExtensionAction(
++      GetDocument()->GetFrame(),
++      message,
++      *(new String()),
++      SuspiciousExtensionAction::NETWORK_REQUEST,
++      is_sensitive? SensitiveElement::SENSITIVE : SensitiveElement::NOT_APPLICABLE
++  )) {
++      exception_state.ThrowSecurityError(
++          "Refused to connect to '" + url_.ElidedString() +
++          "' because a user has prevented it.");
++      return false;
++  }
++  return true;
++}
++
+ DEFINE_TRACE(XMLHttpRequest) {
+   visitor->Trace(response_blob_);
+   visitor->Trace(loader_);
+diff --git a/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.h b/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.h
+index a4157e850438..1ef4e345ce50 100644
+--- a/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.h
++++ b/third_party/WebKit/Source/core/xmlhttprequest/XMLHttpRequest.h
+@@ -118,8 +118,8 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
+ 
+   // JavaScript attributes and methods
+   const KURL& Url() const { return url_; }
+-  String statusText() const;
+-  int status() const;
++  String statusText();
++  int status();
+   State readyState() const;
+   bool withCredentials() const { return include_credentials_; }
+   void setWithCredentials(bool, ExceptionState&);
+@@ -143,8 +143,8 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
+                         const AtomicString& value,
+                         ExceptionState&);
+   void overrideMimeType(const AtomicString& override, ExceptionState&);
+-  String getAllResponseHeaders() const;
+-  const AtomicString& getResponseHeader(const AtomicString&) const;
++  String getAllResponseHeaders();
++  const AtomicString& getResponseHeader(const AtomicString&);
+   ScriptString responseText(ExceptionState&);
+   ScriptString ResponseJSONSource();
+   Document* responseXML(ExceptionState&);
+@@ -285,6 +285,16 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
+ 
+   XMLHttpRequestProgressEventThrottle& ProgressEventThrottle();
+ 
++  enum ReadResponsePermission {
++    kPromptUser, // Ask user if extension has permission to read response
++    kAllow, // Allow an extension to read the response without asking user
++    kDisallow, // Disallow an extension to read the response without asking user
++  };
++
++  bool CanExtensionReadResponse();
++
++  bool CanSend(String data, ExceptionState& exception_state);
++
+   Member<XMLHttpRequestUpload> upload_;
+ 
+   KURL url_;
+@@ -356,6 +366,8 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
+   bool response_text_overflow_;
+   bool send_flag_;
+   bool response_array_buffer_failure_;
++
++  ReadResponsePermission can_extension_read_response_;
+ };
+ 
+ std::ostream& operator<<(std::ostream&, const XMLHttpRequest*);
+diff --git a/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.cpp b/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.cpp
+index 63623c5a7468..b5b63deeaab8 100644
+--- a/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.cpp
++++ b/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.cpp
+@@ -68,6 +68,12 @@ PassRefPtr<DOMWrapperWorld> DOMWrapperWorld::Create(v8::Isolate* isolate,
+   return AdoptRef(new DOMWrapperWorld(isolate, world_type, world_id));
+ }
+ 
++Vector<RefPtr<DOMWrapperWorld>>& DOMWrapperWorld::GetOriginWorldStack() {
++  ASSERT(IsMainThread());
++  DEFINE_STATIC_LOCAL(Vector<RefPtr<DOMWrapperWorld>>, worldStack, ());
++  return worldStack;
++}
++
+ DOMWrapperWorld::DOMWrapperWorld(v8::Isolate* isolate,
+                                  WorldType world_type,
+                                  int world_id)
+diff --git a/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.h b/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.h
+index fece5d714208..2ae7f5a0d44d 100644
+--- a/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.h
++++ b/third_party/WebKit/Source/platform/bindings/DOMWrapperWorld.h
+@@ -51,6 +51,29 @@ class DOMObjectHolderBase;
+ // WorldId enum).
+ class PLATFORM_EXPORT DOMWrapperWorld : public RefCounted<DOMWrapperWorld> {
+  public:
++   class OriginWorldScope {
++     WTF_MAKE_NONCOPYABLE(OriginWorldScope);
++
++     public:
++         explicit OriginWorldScope(RefPtr<DOMWrapperWorld> origin_world)
++             : has_pushed_(false) {
++             if (has_pushed_) {
++                 DOMWrapperWorld::GetOriginWorldStack().push_back(origin_world);
++                 has_pushed_ = true;
++             }
++         }
++
++         ~OriginWorldScope() {
++             // "Pop" the origin world to avoid tainting the entire document.
++             if (has_pushed_) {
++                 DOMWrapperWorld::GetOriginWorldStack().pop_back();
++             }
++         }
++
++     private:
++         bool has_pushed_;
++   };
++
+   // Per-thread global identifiers for DOMWrapperWorld.
+   enum WorldId {
+     kInvalidWorldId = -1,
+@@ -137,6 +160,22 @@ class PLATFORM_EXPORT DOMWrapperWorld : public RefCounted<DOMWrapperWorld> {
+            world_type_ == WorldType::kInspectorIsolated;
+   }
+ 
++  DOMWrapperWorld* GetOriginWorld() {
++    if (IsIsolatedWorld()) {
++      return this;
++    }
++    if (IsMainThread() && !GetOriginWorldStack().IsEmpty()) {
++      return GetOriginWorldStack().back().Get();
++    }
++    return nullptr;
++  };
++
++  bool IsOfIsolatedWorldOrigin() {
++    ASSERT(IsMainThread());
++    DOMWrapperWorld* origin = GetOriginWorld();
++    return origin ? origin->IsIsolatedWorld() : false;
++  };
++
+   int GetWorldId() const { return world_id_; }
+   DOMDataStore& DomDataStore() const { return *dom_data_store_; }
+ 
+@@ -168,6 +207,8 @@ class PLATFORM_EXPORT DOMWrapperWorld : public RefCounted<DOMWrapperWorld> {
+     DOMWrapperWorld* world_;
+   };
+ 
++  static Vector<RefPtr<DOMWrapperWorld>>& GetOriginWorldStack();
++
+   template <typename T>
+   class DOMObjectHolder : public DOMObjectHolderBase {
+    public:
+diff --git a/third_party/WebKit/Source/web/ChromeClientImpl.cpp b/third_party/WebKit/Source/web/ChromeClientImpl.cpp
+index bd26c8f111d0..33099e76fd4c 100644
+--- a/third_party/WebKit/Source/web/ChromeClientImpl.cpp
++++ b/third_party/WebKit/Source/web/ChromeClientImpl.cpp
+@@ -543,6 +543,24 @@ bool ChromeClientImpl::OpenJavaScriptPromptDelegate(LocalFrame* frame,
+   return false;
+ }
+ 
++bool ChromeClientImpl::DisplayExtensionActionPromptDelegate(const GURL& extension_url,
++                                                            LocalFrame* frame,
++                                                            const String& message,
++                                                            const SuspiciousExtensionAction& extension_action,
++                                                            const SensitiveElement& sensitive_element) {
++  NotifyPopupOpeningObservers();
++  WebLocalFrameImpl* webframe = WebLocalFrameImpl::FromFrame(frame);
++  if (webframe->Client()) {
++    return webframe->Client()->DisplayExtensionActionPrompt(
++      extension_url,
++      message,
++      extension_action,
++      sensitive_element
++    );
++  }
++  return true;
++}
++
+ void ChromeClientImpl::SetStatusbarText(const String& message) {
+   if (web_view_->Client())
+     web_view_->Client()->SetStatusText(message);
+diff --git a/third_party/WebKit/Source/web/ChromeClientImpl.h b/third_party/WebKit/Source/web/ChromeClientImpl.h
+index 160748e623f7..03d3f9951e04 100644
+--- a/third_party/WebKit/Source/web/ChromeClientImpl.h
++++ b/third_party/WebKit/Source/web/ChromeClientImpl.h
+@@ -108,6 +108,12 @@ class WEB_EXPORT ChromeClientImpl final : public ChromeClient {
+                                     const String& message,
+                                     const String& default_value,
+                                     String& result) override;
++  bool DisplayExtensionActionPromptDelegate(
++    const GURL&,
++    LocalFrame*,
++    const String&,
++    const SuspiciousExtensionAction&,
++    const SensitiveElement&) override;
+   void SetStatusbarText(const String& message) override;
+   bool TabsToLinks() override;
+   void InvalidateRect(const IntRect&) override;
+diff --git a/third_party/WebKit/Source/web/WebElement.cpp b/third_party/WebKit/Source/web/WebElement.cpp
+index 36f7fde88866..4a0aef6b983f 100644
+--- a/third_party/WebKit/Source/web/WebElement.cpp
++++ b/third_party/WebKit/Source/web/WebElement.cpp
+@@ -122,8 +122,8 @@ WebString WebElement::TextContent() const {
+   return ConstUnwrap<Element>()->textContent();
+ }
+ 
+-WebString WebElement::InnerHTML() const {
+-  return ConstUnwrap<Element>()->innerHTML();
++WebString WebElement::InnerHTML() {
++  return Unwrap<Element>()->innerHTML();
+ }
+ 
+ bool WebElement::HasNonEmptyLayoutSize() const {
+diff --git a/third_party/WebKit/public/web/WebElement.h b/third_party/WebKit/public/web/WebElement.h
+index f30599a4241e..b1965289ad30 100644
+--- a/third_party/WebKit/public/web/WebElement.h
++++ b/third_party/WebKit/public/web/WebElement.h
+@@ -64,7 +64,7 @@ class WebElement : public WebNode {
+   BLINK_EXPORT WebString GetAttribute(const WebString&) const;
+   BLINK_EXPORT void SetAttribute(const WebString& name, const WebString& value);
+   BLINK_EXPORT WebString TextContent() const;
+-  BLINK_EXPORT WebString InnerHTML() const;
++  BLINK_EXPORT WebString InnerHTML();
+   BLINK_EXPORT WebString AttributeLocalName(unsigned index) const;
+   BLINK_EXPORT WebString AttributeValue(unsigned index) const;
+   BLINK_EXPORT unsigned AttributeCount() const;
+diff --git a/third_party/WebKit/public/web/WebFrameClient.h b/third_party/WebKit/public/web/WebFrameClient.h
+index c2e13f4c53e0..58790d6eeb30 100644
+--- a/third_party/WebKit/public/web/WebFrameClient.h
++++ b/third_party/WebKit/public/web/WebFrameClient.h
+@@ -33,6 +33,7 @@
+ 
+ #include <memory>
+ 
++#include "url/gurl.h"
+ #include "WebAXObject.h"
+ #include "WebDOMMessageEvent.h"
+ #include "WebDataSource.h"
+@@ -549,6 +550,13 @@ class BLINK_EXPORT WebFrameClient {
+     return false;
+   }
+ 
++  virtual bool DisplayExtensionActionPrompt(const GURL& extension_url,
++                                    const blink::WebString& message,
++                                    const SuspiciousExtensionAction& extension_action,
++                                    const SensitiveElement& sensitive_element) {
++    return true;
++  }
++
+   // Displays a modal confirmation dialog with OK/Cancel choices, where 'OK'
+   // means that it is okay to proceed with closing the view. Returns true if
+   // the user selects 'OK' or false otherwise.
+diff --git a/third_party/closure_compiler/externs/developer_private.js b/third_party/closure_compiler/externs/developer_private.js
+index b26a655de4db..7377ca4c908a 100644
+--- a/third_party/closure_compiler/externs/developer_private.js
++++ b/third_party/closure_compiler/externs/developer_private.js
+@@ -632,6 +632,13 @@ chrome.developerPrivate.updateProfileConfiguration = function(update, callback)
+ chrome.developerPrivate.showPermissionsDialog = function(extensionId, callback) {};
+ 
+ /**
++ * Opens a suspicious actions dialog.
++ * @param {string} extensionId The id of the extension to show permissions for.
++ * @param {function():void=} callback
++ */
++chrome.developerPrivate.showSuspiciousActionsDialog = function(extensionId, callback) {};
++
++/**
+  * Reloads a given extension.
+  * @param {string} extensionId The id of the extension to reload.
+  * @param {!chrome.developerPrivate.ReloadOptions=} options Additional
+diff --git a/url/gurl.h b/url/gurl.h
+index 74efbb5021e6..ae67e3442186 100644
+--- a/url/gurl.h
++++ b/url/gurl.h
+@@ -19,6 +19,24 @@
+ #include "url/url_constants.h"
+ #include "url/url_export.h"
+ 
++enum class SuspiciousExtensionAction {
++   EVENT,
++   NETWORK_REQUEST,
++   DOM_MUTATION,
++   ELEMENT_DESCRIPTION_MUTATION,
++   READ_ELEMENT,
++   ELEMENT_MUTATION,
++   CREATE_ELEMENT,
++   NETWORK_RESPONSE,
++   NAVIGATOR
++};
++
++enum class SensitiveElement {
++    SENSITIVE,
++    NOT_SENSITIVE,
++    NOT_APPLICABLE
++};
++
+ // Represents a URL.
+ //
+ // A parsed canonicalized URL will be guaranteed UTF-8. Only the ref (if
+diff --git a/url/ipc/url_ipc_export.h b/url/ipc/url_ipc_export.h
+index 1da0fa6854b9..a24821a2a8dc 100644
+--- a/url/ipc/url_ipc_export.h
++++ b/url/ipc/url_ipc_export.h
+@@ -9,20 +9,30 @@
+ #if defined(WIN32)
+ 
+ #if defined(URL_IPC_IMPLEMENTATION)
++#define SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT __declspec(dllexport)
++#define SENSITIVE_ELEMENT_IPC_EXPORT __declspec(dllexport)
+ #define URL_IPC_EXPORT __declspec(dllexport)
+ #else
++#define SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT __declspec(dllimport)
++#define SENSITIVE_ELEMENT_IPC_EXPORT __declspec(dllimport)
+ #define URL_IPC_EXPORT __declspec(dllimport)
+ #endif  // defined(URL_IPC_IMPLEMENTATION)
+ 
+ #else  // defined(WIN32)
+ #if defined(URL_IPC_IMPLEMENTATION)
++#define SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT __attribute__((visibility("default")))
++#define SENSITIVE_ELEMENT_IPC_EXPORT __attribute__((visibility("default")))
+ #define URL_IPC_EXPORT __attribute__((visibility("default")))
+ #else
++#define SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT
++#define SENSITIVE_ELEMENT_IPC_EXPORT
+ #define URL_IPC_EXPORT
+ #endif
+ #endif
+ 
+ #else  // defined(COMPONENT_BUILD)
++#define SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT
++#define SENSITIVE_ELEMENT_IPC_EXPORT
+ #define URL_IPC_EXPORT
+ #endif
+ 
+diff --git a/url/ipc/url_param_traits.cc b/url/ipc/url_param_traits.cc
+index b41e4716204f..a15d695e7082 100644
+--- a/url/ipc/url_param_traits.cc
++++ b/url/ipc/url_param_traits.cc
+@@ -8,6 +8,16 @@
+ 
+ namespace IPC {
+ 
++void ParamTraits<SuspiciousExtensionAction>::GetSize(base::PickleSizer* s, const SuspiciousExtensionAction& p) {
++  uint16_t i;
++  GetParamSize(s, i);
++}
++
++void ParamTraits<SensitiveElement>::GetSize(base::PickleSizer* s, const SensitiveElement& p) {
++  uint16_t i;
++  GetParamSize(s, i);
++}
++
+ void ParamTraits<GURL>::GetSize(base::PickleSizer* s, const GURL& p) {
+   if (p.possibly_invalid_spec().length() > url::kMaxURLChars || !p.is_valid()) {
+     GetParamSize(s, std::string());
+@@ -17,6 +27,14 @@ void ParamTraits<GURL>::GetSize(base::PickleSizer* s, const GURL& p) {
+   GetParamSize(s, p.possibly_invalid_spec());
+ }
+ 
++void ParamTraits<SuspiciousExtensionAction>::Write(base::Pickle* m, const SuspiciousExtensionAction& p) {
++  m->WriteUInt16(static_cast<uint16_t>(p));
++}
++
++void ParamTraits<SensitiveElement>::Write(base::Pickle* m, const SensitiveElement& p) {
++  m->WriteUInt16(static_cast<uint16_t>(p));
++}
++
+ void ParamTraits<GURL>::Write(base::Pickle* m, const GURL& p) {
+   if (p.possibly_invalid_spec().length() > url::kMaxURLChars) {
+     m->WriteString(std::string());
+@@ -38,6 +56,30 @@ void ParamTraits<GURL>::Write(base::Pickle* m, const GURL& p) {
+   // TODO(brettw) bug 684583: Add encoding for query params.
+ }
+ 
++bool ParamTraits<SuspiciousExtensionAction>::Read(const base::Pickle* m,
++                                                  base::PickleIterator* iter,
++                                                  SuspiciousExtensionAction* p) {
++  uint16_t s;
++  if (iter->ReadUInt16(&s)) {
++    *p = static_cast<SuspiciousExtensionAction>(s);
++    return true;
++  } else {
++    return false;
++  }
++}
++
++bool ParamTraits<SensitiveElement>::Read(const base::Pickle* m,
++                                         base::PickleIterator* iter,
++                                         SensitiveElement* p) {
++  uint16_t s;
++  if (iter->ReadUInt16(&s)) {
++    *p = static_cast<SensitiveElement>(s);
++    return true;
++  } else {
++    return false;
++  }
++}
++
+ bool ParamTraits<GURL>::Read(const base::Pickle* m,
+                              base::PickleIterator* iter,
+                              GURL* p) {
+@@ -54,6 +96,10 @@ bool ParamTraits<GURL>::Read(const base::Pickle* m,
+   return true;
+ }
+ 
++void ParamTraits<SuspiciousExtensionAction>::Log(const SuspiciousExtensionAction& p, std::string* l) {}
++
++void ParamTraits<SensitiveElement>::Log(const SensitiveElement& p, std::string* l) {}
++
+ void ParamTraits<GURL>::Log(const GURL& p, std::string* l) {
+   l->append(p.spec());
+ }
+diff --git a/url/ipc/url_param_traits.h b/url/ipc/url_param_traits.h
+index 8db402948461..b31866877a28 100644
+--- a/url/ipc/url_param_traits.h
++++ b/url/ipc/url_param_traits.h
+@@ -12,6 +12,28 @@
+ namespace IPC {
+ 
+ template <>
++struct SUSPICIOUS_EXTENSION_ACTION_IPC_EXPORT ParamTraits<SuspiciousExtensionAction> {
++  typedef SuspiciousExtensionAction param_type;
++  static void GetSize(base::PickleSizer* s, const param_type& p);
++  static void Write(base::Pickle* m, const param_type& p);
++  static bool Read(const base::Pickle* m,
++                   base::PickleIterator* iter,
++                   param_type* p);
++  static void Log(const param_type& p, std::string* l);
++};
++
++template <>
++struct SENSITIVE_ELEMENT_IPC_EXPORT ParamTraits<SensitiveElement> {
++  typedef SensitiveElement param_type;
++  static void GetSize(base::PickleSizer* s, const param_type& p);
++  static void Write(base::Pickle* m, const param_type& p);
++  static bool Read(const base::Pickle* m,
++                   base::PickleIterator* iter,
++                   param_type* p);
++  static void Log(const param_type& p, std::string* l);
++};
++
++template <>
+ struct URL_IPC_EXPORT ParamTraits<GURL> {
+   typedef GURL param_type;
+   static void GetSize(base::PickleSizer* s, const param_type& p);

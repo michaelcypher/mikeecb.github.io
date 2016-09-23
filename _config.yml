@@ -1,0 +1,32 @@
+title: cypher.codes
+baseurl: ""
+url: "https://cypher.codes"
+enforce_ssl: cypher.codes
+description: The personal website of Michael Cypher
+
+permalink: /writing/:title
+redirects: yes
+
+markdown: kramdown
+highlighter: rouge
+
+remote_theme: mikeecb/cypher-jekyll-theme
+
+plugins:
+  - jekyll-feed
+  - jekyll-remote-theme
+  - jekyll-sitemap
+  - jekyll-redirect-from
+exclude: [vendor]
+
+defaults:
+    - scope:
+        path: "_posts"
+      values:
+        layout: post
+    - scope:
+        path: ""
+      values:
+        back:
+            text: "Home"
+            url: "/"

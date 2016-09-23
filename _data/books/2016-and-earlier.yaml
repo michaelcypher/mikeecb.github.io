@@ -1,0 +1,167 @@
+title: Previous Years
+books:
+ - name: The Snow Child
+   author: Eowyn Ivey
+   amazon_link: https://www.amazon.com/Snow-Child-Novel-Eowyn-Ivey/dp/0316175668
+
+ - name: "Flash Boys: A Wall Street Revolt"
+   author: Michael Lewis
+   amazon_link: https://www.amazon.com/Flash-Boys-Wall-Street-Revolt/dp/0393351599
+   
+ - name: "Fermat's Last Theorem"
+   author: Simon Singh
+   amazon_link: https://www.amazon.com/Fermats-Theorem-Simon-Singh-1998-05-07/dp/B01A0C2WGW
+   
+ - name: The Great Gatbsy
+   author: F. Scott Fitzgerald
+   amazon_link: https://www.amazon.com/Great-Gatsby-F-Scott-Fitzgerald/dp/1781396833
+
+ - name: "Brief Candle in the Dark: My Life in Science"
+   author: Richard Dawkins
+   amazon_link: https://www.amazon.com/Brief-Candle-Dark-Life-Science/dp/0062288431
+
+ - name: "Dataclysm: Love, Sex, Race, and Identity"
+   author: Christian Rudder
+   amazon_link: https://www.amazon.com/Dataclysm-Identity-What-Online-Offline-Selves/dp/0385347391
+
+ - name: Catch 22
+   author: Joseph Heller
+   amazon_link: https://www.amazon.com/Catch-22-Joseph-Heller-ebook/dp/B0050OMJIW
+   star: true
+
+ - name: The Grapes of Wrath
+   author: John Steinbeck
+   amazon_link: https://www.amazon.com/Grapes-Wrath-John-Steinbeck/dp/0143039431
+   star: true
+
+ - name: Of Mice and Men
+   author: John Steinbeck
+   amazon_link: https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396
+
+ - name: A View from the Bridge
+   author: Arthur Miller
+   amazon_link: https://www.amazon.com/View-Bridge-Penguin-Classics/dp/0143105574
+
+ - name: El Túnel
+   author: Ernesto Sábato
+   amazon_link: https://www.amazon.com/Túnel-Spanish-Ernesto-Sábato-Paperback/dp/B01182RZP6
+
+ - name: Me llamo Rigoberta Menchú y así me nació la conciencia
+   author: Elizabeth Burgos
+   amazon_link: https://www.amazon.com/llamo-Rigoberta-Menchú-nació-conciencia/dp/9682313155
+
+ - name: Frankenstein
+   author: Mary Shelly
+   amazon_link: https://www.amazon.com/Frankenstein-Mary-Shelley/dp/0486282112
+
+ - name: Dracula
+   author: Bram Stoker
+   amazon_link: https://www.amazon.com/Dracula-Bram-Stoker/dp/0486411095
+
+ - name: "Harry Potter #1: Harry Potter and the Philosopher's stone"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Sorcerers-Stone-Rowling/dp/059035342X
+
+ - name: "Harry Potter #2: Harry Potter and the Chamber Of Secrets"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Chamber-Secrets-Rowling/dp/0439064872
+
+ - name: "Harry Potter #3: Harry Potter and the Prisoner of Azkaban"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Prisoner-Azkaban-Rowling/dp/0439136369
+
+
+ - name: "Harry Potter #4: Harry Potter and the Goblet Of Fire"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Goblet-Fire-Rowling/dp/0439139600
+
+
+ - name: "Harry Potter #5: Harry Potter and the Order Of The Phoenix"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Order-Phoenix-Rowling/dp/0439358078
+
+
+ - name: "Harry Potter #6: Harry Potter and the Half-Blood Prince"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Half-Blood-Prince-Book/dp/0439785960
+
+
+ - name: "Harry Potter #7: Harry Potter and the Deathly Hallows"
+   author: J.K. Rowling
+   amazon_link: https://www.amazon.com/Harry-Potter-Deathly-Hallows-Book/dp/0545139708
+
+ - name: "The Twilight Saga #1: Twilight"
+   author: Stephenie Meyer
+   amazon_link: https://www.amazon.com/Twilight-Saga-Book-1/dp/0316015849
+
+ - name: "The Twilight Saga #2: New Moon"
+   author: Stephenie Meyer
+   amazon_link: https://www.amazon.com/Moon-Twilight-Saga-Stephenie-Meyer/dp/0316024961
+
+ - name: "The Twilight Sage #3: Eclipse"
+   author: Stephenie Meyer
+   amazon_link: https://www.amazon.com/Eclipse-Twilight-Sagas-Stephenie-Meyer/dp/0316027650
+
+ - name: "The Twilight Saga #4: Breaking Dawn"
+   author: Stephenie Meyer
+   amazon_link: https://www.amazon.com/Breaking-Dawn-Twilight-Saga-Book/dp/0316067938
+
+ - name: "The Demonata #1: Lord Loss"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Demonata-Lord-Loss-Book/dp/0316012335
+
+ - name: "The Demonata #2: Demon Thief"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Demonata-Demon-Thief-Book/dp/0316012386
+
+ - name: "The Demonata #3: Slawter"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Demonata-Slawter-Book/dp/0316013889
+
+ - name: "The Demonata #4: Bec"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Bec-Demonata-No-Darren-Shan/dp/0316013900
+
+ - name: "The Demonata #5: Blood Beast"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Blood-Beast-Demonata-Book-5/dp/0316003786
+
+ - name: "Cirque du Freak #1: A Living Nightmare"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-du-Freak-Living-Nightmare/dp/0316605107
+
+ - name: "Cirque du Freak #2: The Vampire's Assistant"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Vampires-Assistant-Cirque-Freak-Book/dp/0316606847
+
+ - name: "Cirque du Freak #3: Tunnels of Blook"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-Du-Freak-Tunnels-Darren/dp/0316606081
+
+ - name: "Cirque du Freak #4: Vampire Mountain"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-Freak-Vampire-Mountain-Book/dp/0316605425
+
+ - name: "Cirque du Freak #5: Trials of Death"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-Du-Freak-Trials-Darren/dp/0316603953
+
+ - name: "Cirque du Freak #6: The Vampire Prince"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-Du-Freak-Vampire-Prince/dp/0316602744
+
+ - name: "Cirque du Freak #7: Hunters of the Dusk"
+   author: Darren Shan
+   amazon_link: https://www.amazon.com/Cirque-Du-Freak-Hunters-Darren/dp/0316602116
+
+ - name: "A Series of Unfortunate Events #1: The Bad Beginning"
+   author: Lemony Snicket
+   amazon_link: https://www.amazon.com/Bad-Beginning-Orphans-Unfortunate-Events/dp/0061146307
+
+ - name: "A Series of Unfortunate Events #2: The Reptile Room"
+   author: Lemony Snicket
+   amazon_link: https://www.amazon.com/Reptile-Room-Murder-Unfortunate-Events/dp/0061146315
+
+ - name: "A Series of Unfortunate Events #3: The Wide Window"
+   author: Lemony Snicket
+   amazon_link: https://www.amazon.com/Reptile-Room-Murder-Unfortunate-Events/dp/0061146315
