@@ -1,7 +1,9 @@
 ---
+layout: post
 title:  "Cryptopals Set 2"
 date:   2017-05-13 12:00:00 +0100
 time_to_read: 15
+has_code: true
 redirect_from: 2017/05/13/cryptopals-challenge-set-2.html
 ---
 
@@ -24,9 +26,6 @@ This is the second installment of a mini-series where I walk through the [Crypto
 
 <h3 id="9-implement-pkcs7-padding">
   9. Implement PKCS#7 padding
-  <a class="no-underline" href="#9-implement-pkcs7-padding">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 Block ciphers work by encrypting single blocks of plaintext or decrypting single blocks of ciphertext. However, most messages we want to encrypt are irregularly sized and need to be padded to be a multiple the block size (usually 8 or 16 bytes).
@@ -70,9 +69,6 @@ def unpad_pkcs7(buffer):
 
 <h3 id="10-implement-cbc-mode">
   10. Implement CBC mode
-  <a class="no-underline" href="#10-implement-cbc-mode">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This exercise involves writing AES-128 functions to encrypt and decrypt in CBC mode by using the AES-128 in ECB mode as done in [exercise 7]({% post_url 2017-04-20-cryptopals-challenge-set-1 %}#7-aes-in-ecb-mode).
@@ -148,9 +144,6 @@ aes_128_cbc_dec(ciphertext, key, iv)
 
 <h3 id="11-an-ecb-cbc-detection-oracle">
   11. An ECB/CBC detection oracle
-  <a class="no-underline" href="#11-an-ecb-cbc-detection-oracle">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In this exercise, we are asked to write an function to randomly encrypt a buffer with AES-128 in either ECB or CBC mode and with a random 128 bit key, and then to write an oracle that determines if a ciphertext was encrypted using ECB or CBC mode.
@@ -235,9 +228,6 @@ print "Detection works"
 
 <h3 id="12-byte-at-a-time-ecb-decryption">
   12. Byte-at-a-time ECB decryption (Simple)
-  <a class="no-underline" href="#12-byte-at-a-time-ecb-decryption">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 Obviously these challenges aren't meant to be easy, but I think the walkthrough for this question is slightly underspecified. Then again, this is the first attack that will break real crypto...
@@ -367,9 +357,6 @@ print get_unknown_string(encryption_oracle)
 
 <h3 id="13-ecb-cut-and-paste">
   13. ECB cut-and-paste
-  <a class="no-underline" href="#13-ecb-cut-and-paste">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 The goal of this exercise is to change the content of a ciphertext (produced using AES-128 in ECB mode) such that when it is decrypted, you have replaced some of the plaintext (that you were not in control of) with your own content.
@@ -448,9 +435,6 @@ create_admin_profile()
 
 <h3 id="14-byte-at-a-time-ecb-decryption-harder">
   14. Byte-at-a-time ECB decryption (Harder)
-  <a class="no-underline" href="#14-byte-at-a-time-ecb-decryption-harder">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This exercise is a rehash of [exercise 12](#12-byte-at-a-time-ecb-decryption) but instead of the encryption oracle encrypting `user_input || unknown_string`, the oracle encrypts `random_prefix || user_input || unknown_string`. The aim of this exercise is still to decrypt the `unknown_string` however the presence of the `random_prefix` makes it harder. I assume the `random_prefix` is constant (as the `unknown_string` is constant).
@@ -542,9 +526,6 @@ get_unknown_string(encryption_oracle)
 
 <h3 id="15-pkcs7-padding-validation">
   15. PKCS#7 padding validation
-  <a class="no-underline" href="#15-pkcs7-padding-validation">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In this exercise, we are instructed to determine if a plaintext has a valid PKCS#7 padding. If it does, we should strip it off and if not, throw an exception. We can do this with minimal changes to the `unpad_pkcs7` function we wrote in [exercise 9](#9-implement-pkcs7-padding).
@@ -572,9 +553,6 @@ unpad_valid_pkcs7(bytearray("ICE ICE BABY\x04\x04\x04\x03"))
 
 <h3 id="16-cbc-bitflipping-attacks">
   16. CBC bitflipping attacks
-  <a class="no-underline" href="#16-cbc-bitflipping-attacks">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This exercise involves cracking encryption in CBC mode! Essentially, we want to change some ciphertext, produced by an encryption oracle, such that a decryption oracle sees the string `";admin=true;"` is present in it's plaintext.

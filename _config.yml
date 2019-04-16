@@ -1,32 +1,18 @@
-title: cypher.codes
-baseurl: ""
+title: Michael Cypher
+email: michael@cypher.codes
 url: "https://cypher.codes"
-enforce_ssl: cypher.codes
-description: The personal website of Michael Cypher
+baseurl: ""
+linkedin_username: mikeecb
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-redirect-from
+
+include: [_lists]
+
+highlighter: rouge
 
 permalink: /writing/:title
 redirects: yes
-
-markdown: kramdown
-highlighter: rouge
-
-remote_theme: mikeecb/cypher-jekyll-theme
-
-plugins:
-  - jekyll-feed
-  - jekyll-remote-theme
-  - jekyll-sitemap
-  - jekyll-redirect-from
-exclude: [vendor]
-
-defaults:
-    - scope:
-        path: "_posts"
-      values:
-        layout: post
-    - scope:
-        path: ""
-      values:
-        back:
-            text: "Home"
-            url: "/"

@@ -1,7 +1,9 @@
 ---
+layout: post
 title:  "Cryptopals Set 1"
 date:   2017-04-21 09:00:00 +0100
 time_to_read: 8
+has_code: true
 redirect_from: 2017/04/21/cryptopals-challenge-set-1.html
 ---
 
@@ -26,9 +28,6 @@ I've chosen to do them in Python 2, but many of the solutions should also work f
 
 <h3 id="1-convert-hex-to-base64">
   1. Convert hex to base64
-  <a class="no-underline" href="#1-convert-hex-to-base64">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 The very first exercise is to convert a hexadecimal string to base64. This is a trivial task using Python.
@@ -43,9 +42,6 @@ base64_str = decoded.encode("base64")
 
 <h3 id="2-fixed-xor">
   2. Fixed XOR
-  <a class="no-underline" href="#2-fixed-xor">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 The second exercise is to "write a function that takes two equal-length buffers and produces their XOR combination".
@@ -72,9 +68,6 @@ b.encode("hex")
 
 <h3 id="3-single-byte-xor-cipher">
   3. Single-byte XOR cipher
-  <a class="no-underline" href="#3-single-byte-xor-cipher">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This is when the Cryptopals Challenge starts to get interesting! In this exercise, the plaintext has been encrypted with one character (known as a [Caesar cipher](https://en.wikipedia.org/wiki/Caesar_cipher")). The goal is to find this character (the key), given a ciphertext provided in hexadecimal.
@@ -123,9 +116,6 @@ print break_single_key_xor(b1)
 
 <h3 id="4-detect-single-character-xor">
   4. Detect single-character XOR
-  <a class="no-underline" href="#4-detect-single-character-xor">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This question is a rehash of the previous question. Instead of finding the most likely plaintext possible given one ciphertext, we are given 60 ciphertexts.
@@ -158,9 +148,6 @@ print key, english_plaintext
 
 <h3 id="5-implement-repeating-key-xor">
   5. Implement repeating-key XOR
-  <a class="no-underline" href="#5-implement-repeating-key-xor">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In this exercise, we are asked to encrypt a piece of text with a repeating-key (a [Vigenère cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher")). This was fairly simple to achieve using code from previous questions.
@@ -182,9 +169,6 @@ plaintext.encode("hex")
 
 <h3 id="6-breaking-repeating-key-xor">
   6. Break repeating-key XOR
-  <a class="no-underline" href="#6-breaking-repeating-key-xor">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 When I said "this is when the Cryptopals Challenge starts to get interesting!" in [exercise 3](#3-single-byte-xor-cipher), I was wrong. It actually becomes interesting now! Let's break a Vigenère cipher!
@@ -294,9 +278,6 @@ for KEYSIZE, _ in normalized_distances[:5]:
 
 <h3 id="7-aes-in-ecb-mode">
   7. AES in ECB mode
-  <a class="no-underline" href="#7-aes-in-ecb-mode">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 The last two exercises in this set involve working with a real encryption standard, [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) (although [ECB mode](https://crypto.stackexchange.com/questions/20941/why-shouldnt-i-use-ecb-encryption) is hopefully not used as it's insecure)! I'll discuss ECB mode further in the next exercise, where we have to break AES in ECB mode, but for this one, let's just decrypt a given ciphertext.
@@ -328,9 +309,6 @@ plaintext = obj.decrypt(ciphertext)
 
 <h3 id="8-detect-aes-in-ecb-mode">
   8. Detect AES in ECB mode
-  <a class="no-underline" href="#8-detect-aes-in-ecb-mode">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 We've made it to the last exercise (in the first set)! The rest of the exercises built up to this one. Let's get started.

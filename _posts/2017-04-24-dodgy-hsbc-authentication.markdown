@@ -1,8 +1,9 @@
 ---
+layout: post
 title:  "Dodgy HSBC Authentication"
 date:   2017-04-24 12:00:00 +0100
 time_to_read: 2
-redirect_from: 2017/04/24/dodgy-hsbc-authentication.html
+redirect_from: writing/dodgy-hsbc-authentication
 ---
 
 I don't trust [HSBC](https://www.hsbc.co.uk/1/2/)'s method of authentication for their online banking website. Well, at least not one of them.
@@ -11,11 +12,7 @@ HSBC allows two forms of authentication. The first involves using a [keypad ](ht
 
 The other form of authentication is the one I (and [others](https://www.reddit.com/r/AskNetsec/comments/2vta6k/explain_to_me_why_hsbcs_method_of_authentication/)) take issue with. HSBC lets users log onto their online banking (with fewer privileges) when they provide the answer to a memorable question and certain characters of their password. HSBC (and [others](https://www.tradeking.com/faq/whyuseanonscreenkeyboard)) do this in order to protect against key loggers.
 
-<div class="center-media img-container" alt="HSBC's Online Authentication Page">
-    {% include svg/hsbc-logon.jpg.svg %}
-    <img src="/assets/imgs/hsbc-logon.jpg" class="overlay-img">
-</div>
-<p class="image-label">HSBC's Online Authentication Page</p>
+<img src="/assets/imgs/hsbc-logon.png" alt="HSBC's Online Authentication Page" />
 
 #### The problems ####
 * Your password is not hashed and salted (the [industry standard](https://security.stackexchange.com/questions/51959/why-are-salted-hashes-more-secure-for-password-storage)).

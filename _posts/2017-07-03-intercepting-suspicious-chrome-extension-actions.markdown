@@ -1,14 +1,14 @@
 ---
+layout: post
 title: "Intercepting Suspicious Chrome Extension Actions"
 date:   2017-07-05 10:00:00 +0100
 time_to_read: 4
-redirect_from: 2017/07/05/intercepting_suspicious_chrome_extension_actions.html
+redirect_from: writing/intercepting_suspicious_chrome_extension_actions
 ---
 
 I just finished my masters project at [Imperial College London](http://www.imperial.ac.uk/)! I considered re-writing a shorter web version but honestly, I don't have the motivation yet. Maybe I'll get round to it one day but until then you can find my report and presentation here. Enjoy!
 
-<img class="center-media" src="{{ "/assets/intercepting-suspicious-chrome-extension-actions/demo.gif" | relative_url }}" alt="Our modified browser intercepting suspicious extension actions">
-<p class="image-label">Our modified browser intercepting suspicious extension actions</p>
+<img src="/assets/intercepting-suspicious-chrome-extension-actions/demo.gif" alt="Our modified browser intercepting suspicious extension actions">
 
 ### Abstract ###
 

@@ -1,0 +1,242 @@
+book_groups:
+ - year: 2019
+   books:
+    - name: Lolita
+      author: Vladimir Nabokov
+      amazon_link: https://www.amazon.com/Lolita-Vladimir-Nabokov/dp/0679723161
+      
+    - name: Educated
+      author: Tara Westover
+      amazon_link: https://www.amazon.com/Educated-Memoir-Tara-Westover-ebook/dp/B072BLVM83
+
+ - year: 2018
+   books:
+    - name: Pet Sematary
+      author: Stephen King
+      amazon_link: https://www.amazon.com/Pet-Sematary-Novel-Stephen-King/dp/1501156705
+
+    - name: Do Androids Dream of Electric Sheep?
+      author: Philip K. Dick
+      amazon_link: https://www.amazon.com/Androids-Dream-Electric-Sheep-inspiration-ebook/dp/B000SEGTI0
+
+    - name: Weird Fucks
+      author: Lynne Tillman
+      amazon_link: https://www.amazon.com/Weird-Fucks-Lynne-Tillman/dp/B07937HD47
+
+    - name: Bossypants
+      author: Tina Fey
+      amazon_link: https://www.amazon.com/Bossypants-Tina-Fey/dp/0316056898
+
+    - name: When Breath Becomes Air
+      author: Paul Kalanithi
+      amazon_link: https://www.amazon.com/When-Breath-Becomes-Paul-Kalanithi/dp/081298840X
+      star: true
+
+    - name: The Fountainhead
+      author: Ayn Rand
+      amazon_link: https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153
+      star: true
+
+    - name: The Handmaid's Tale
+      author: Margaret Atwood
+      amazon_link: https://www.amazon.com/Handmaids-Tale-Margaret-Atwood/dp/1328879941
+      star: true
+
+    - name: The Outsider
+      author: Albert Camus (Sandra Smith)
+      amazon_link: https://www.amazon.com/Outsider-Albert-Camus/dp/0141198060
+
+    - name: Fahrenheit 451
+      author: Ray Bradbury
+      amazon_link: https://www.amazon.com/Fahrenheit-451-Ray-Bradbury/dp/1451673310
+      star: true
+
+    - name: The Metamorphosis
+      author: Franz Kafka (David Wyllie)
+      amazon_link: https://www.amazon.com/Metamorphosis-Franz-Kafka/dp/1505297052
+
+    - name: Genghis Khan and the Making of the Modern World
+      author: Jack Weatherford
+      amazon_link: https://www.amazon.com/Genghis-Khan-Making-Modern-World/dp/0609610627
+
+ - year: 2017
+   books:
+    - name: The Girl on the Train
+      author: Paula Hawkins
+      amazon_link: https://www.amazon.com/Girl-Train-Novel-Paula-Hawkins-ebook/dp/B00L9B7IKE
+
+    - name: "I Am Pilgrim: A Thriller"
+      author: Terry Hayes
+      amazon_link: https://www.amazon.com/Am-Pilgrim-Thriller-Terry-Hayes/dp/1439177732
+
+    - name: Look Behind You
+      author: Sibel Hodge
+      amazon_link: https://www.amazon.com/Look-Behind-You-Sibel-Hodge-ebook/dp/B00KQW9CXI
+
+    - name: What We Talk About When We Talk About Love
+      author: Raymon Carver
+      amazon_link: https://www.amazon.com/What-Talk-About-When-Love/dp/0679723056
+      star: true
+
+    - name: Seven Brief Lessons on Physics
+      author: Carlo Rovelli
+      amazon_link: https://www.amazon.com/Seven-Brief-Lessons-Physics-Rovelli/dp/0399184414
+      star: true
+
+ - year: unknown
+   books:
+    - name: The Snow Child
+      author: Eowyn Ivey
+      amazon_link: https://www.amazon.com/Snow-Child-Novel-Eowyn-Ivey/dp/0316175668
+
+    - name: "Flash Boys: A Wall Street Revolt"
+      author: Michael Lewis
+      amazon_link: https://www.amazon.com/Flash-Boys-Wall-Street-Revolt/dp/0393351599
+
+    - name: "Fermat's Last Theorem"
+      author: Simon Singh
+      amazon_link: https://www.amazon.com/Fermats-Theorem-Simon-Singh-1998-05-07/dp/B01A0C2WGW
+
+    - name: The Great Gatbsy
+      author: F. Scott Fitzgerald
+      amazon_link: https://www.amazon.com/Great-Gatsby-F-Scott-Fitzgerald/dp/1781396833
+
+    - name: "Brief Candle in the Dark: My Life in Science"
+      author: Richard Dawkins
+      amazon_link: https://www.amazon.com/Brief-Candle-Dark-Life-Science/dp/0062288431
+
+    - name: "Dataclysm: Love, Sex, Race, and Identity"
+      author: Christian Rudder
+      amazon_link: https://www.amazon.com/Dataclysm-Identity-What-Online-Offline-Selves/dp/0385347391
+
+    - name: Catch 22
+      author: Joseph Heller
+      amazon_link: https://www.amazon.com/Catch-22-Joseph-Heller-ebook/dp/B0050OMJIW
+      star: true
+
+    - name: The Grapes of Wrath
+      author: John Steinbeck
+      amazon_link: https://www.amazon.com/Grapes-Wrath-John-Steinbeck/dp/0143039431
+      star: true
+
+    - name: Of Mice and Men
+      author: John Steinbeck
+      amazon_link: https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396
+
+    - name: A View from the Bridge
+      author: Arthur Miller
+      amazon_link: https://www.amazon.com/View-Bridge-Penguin-Classics/dp/0143105574
+
+    - name: El Túnel
+      author: Ernesto Sábato
+      amazon_link: https://www.amazon.com/Túnel-Spanish-Ernesto-Sábato-Paperback/dp/B01182RZP6
+
+    - name: Me llamo Rigoberta Menchú y así me nació la conciencia
+      author: Elizabeth Burgos
+      amazon_link: https://www.amazon.com/llamo-Rigoberta-Menchú-nació-conciencia/dp/9682313155
+
+    - name: Frankenstein
+      author: Mary Shelly
+      amazon_link: https://www.amazon.com/Frankenstein-Mary-Shelley/dp/0486282112
+
+    - name: Dracula
+      author: Bram Stoker
+      amazon_link: https://www.amazon.com/Dracula-Bram-Stoker/dp/0486411095
+
+    - name: Harry Potter
+      author: J.K. Rowling
+      series: true
+      books:
+       - name: "Harry Potter and the Philosopher's Stone"
+         amazon_link: https://www.amazon.com/Harry-Potter-Sorcerers-Stone-Rowling/dp/059035342X
+
+       - name: "Harry Potter and the Chamber of Secrets"
+         amazon_link: https://www.amazon.com/Harry-Potter-Chamber-Secrets-Rowling/dp/0439064872
+
+       - name: "Harry Potter and the Prisoner of Azkaban"
+         amazon_link: https://www.amazon.com/Harry-Potter-Prisoner-Azkaban-Rowling/dp/0439136369
+
+       - name: "Harry Potter and the Goblet of Fire"
+         amazon_link: https://www.amazon.com/Harry-Potter-Goblet-Fire-Rowling/dp/0439139600
+
+       - name: "Harry Potter and the Order of the Phoenix"
+         amazon_link: https://www.amazon.com/Harry-Potter-Order-Phoenix-Rowling/dp/0439358078
+
+       - name: "Harry Potter and the Half-Blood Prince"
+         amazon_link: https://www.amazon.com/Harry-Potter-Half-Blood-Prince-Book/dp/0439785960
+
+       - name: "Harry Potter and the Deathly Hallows"
+         amazon_link: https://www.amazon.com/Harry-Potter-Deathly-Hallows-Book/dp/0545139708
+
+    - name: "The Twilight Saga"
+      author: Stephenie Meyer
+      series: true
+      books:
+       - name: "Twilight"
+         amazon_link: https://www.amazon.com/Twilight-Saga-Book-1/dp/0316015849
+
+       - name: "New Moon"
+         amazon_link: https://www.amazon.com/Moon-Twilight-Saga-Stephenie-Meyer/dp/0316024961
+
+       - name: "Eclipse"
+         amazon_link: https://www.amazon.com/Eclipse-Twilight-Sagas-Stephenie-Meyer/dp/0316027650
+
+       - name: "Breaking Dawn"
+         amazon_link: https://www.amazon.com/Breaking-Dawn-Twilight-Saga-Book/dp/0316067938
+
+    - name: "The Demonata"
+      author: Darren Shan
+      series: true
+      books:
+       - name: "The Demonata: Lord Loss"
+         amazon_link: https://www.amazon.com/Demonata-Lord-Loss-Book/dp/0316012335
+
+       - name: "The Demonata: Demon Thief"
+         amazon_link: https://www.amazon.com/Demonata-Demon-Thief-Book/dp/0316012386
+
+       - name: "The Demonata: Slawter"
+         amazon_link: https://www.amazon.com/Demonata-Slawter-Book/dp/0316013889
+
+       - name: "The Demonata: Bec"
+         amazon_link: https://www.amazon.com/Bec-Demonata-No-Darren-Shan/dp/0316013900
+
+       - name: "The Demonata: Blood Beast"
+         amazon_link: https://www.amazon.com/Blood-Beast-Demonata-Book-5/dp/0316003786
+
+    - name: "Cirque du Freak"
+      author: Darren Shan
+      series: true
+      books:
+       - name: "Cirque du Freak: A Living Nightmare"
+         amazon_link: https://www.amazon.com/Cirque-du-Freak-Living-Nightmare/dp/0316605107
+
+       - name: "Cirque du Freak: The Vampire's Assistant"
+         amazon_link: https://www.amazon.com/Vampires-Assistant-Cirque-Freak-Book/dp/0316606847
+
+       - name: "Cirque du Freak: Tunnels of Blook"
+         amazon_link: https://www.amazon.com/Cirque-Du-Freak-Tunnels-Darren/dp/0316606081
+
+       - name: "Cirque du Freak: Vampire Mountain"
+         amazon_link: https://www.amazon.com/Cirque-Freak-Vampire-Mountain-Book/dp/0316605425
+
+       - name: "Cirque du Freak: Trials of Death"
+         amazon_link: https://www.amazon.com/Cirque-Du-Freak-Trials-Darren/dp/0316603953
+
+       - name: "Cirque du Freak: The Vampire Prince"
+         amazon_link: https://www.amazon.com/Cirque-Du-Freak-Vampire-Prince/dp/0316602744
+
+       - name: "Cirque du Freak: Hunters of the Dusk"
+         amazon_link: https://www.amazon.com/Cirque-Du-Freak-Hunters-Darren/dp/0316602116
+
+    - name: "A Series of Unfortunate Events"
+      author: Lemony Snicket
+      series: true
+      books:
+       - name: "The Bad Beginning: Or, Orphans!"
+         amazon_link: https://www.amazon.com/Bad-Beginning-Orphans-Unfortunate-Events/dp/0061146307
+
+       - name: "The Reptile Room: Or, Murder!"
+         amazon_link: https://www.amazon.com/Reptile-Room-Murder-Unfortunate-Events/dp/0061146315
+
+       - name: "The Wide Window: Or, Disappearance!"
+         amazon_link: https://www.amazon.com/Wide-Window-Disappearance-Unfortunate-Events/dp/0061146331

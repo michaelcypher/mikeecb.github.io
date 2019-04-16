@@ -1,0 +1,128 @@
+- group_name: Imperial College London
+  years:
+    - year: 2013
+      courses:
+       - title: Hardware
+         link: http://www.imperial.ac.uk/computing/current-students/courses/112
+         prof: Prof. Bjoern Schuller
+       - title: Logic
+         link: http://www.imperial.ac.uk/computing/current-students/courses/140
+         prof: Prof. Ian Hodkinson
+       - title: Databases
+         link: http://www.imperial.ac.uk/computing/current-students/courses/130
+         prof: Dr. Naranker Dulay
+       - title: Mathematical Methods and Discrete Mathematics
+         link: http://www.imperial.ac.uk/computing/current-students/courses/145
+         prof: Dr. Jeremy Bradley
+       - title: Programming I
+         link: http://www.imperial.ac.uk/computing/current-students/courses/120_1
+         prof: Dr. Anthony Field
+       - title: Programming II
+         link: http://www.imperial.ac.uk/computing/current-students/courses/120_2
+         prof: Dr. Alastair Donaldson
+       - title: Programming III
+         link: http://www.imperial.ac.uk/computing/current-students/courses/120_3
+         prof: Dr. Maria Valera-Espina
+       - title: Architecture
+         link: http://www.imperial.ac.uk/computing/current-students/courses/113
+         prof: Prof. Wayne Luk
+       - title: Reasoning about Programs
+         link: http://www.imperial.ac.uk/computing/current-students/courses/141
+         prof: Prof. Sophia Drossopoulou
+       - title: Computing Topics
+         link: http://www.imperial.ac.uk/computing/current-students/courses/163
+         prof: Dr. Catarina Fernandes
+    - year: 2014
+      courses:
+       - title: Software Engineering Algorithms
+         link: http://www.imperial.ac.uk/computing/current-students/courses/202
+         prof: Dr. Ben Glocker
+       - title: Operating Systems
+         link: http://www.imperial.ac.uk/computing/current-students/courses/211
+         prof: Prof. Peter Pietzuch
+       - title: Networks and Communications
+         link: http://www.imperial.ac.uk/computing/current-students/courses/212
+         prof: Dr. Anandha Gopalan
+       - title: Software Engineering Design
+         link: http://www.imperial.ac.uk/computing/current-students/courses/220
+         prof: Dr. Robert Chatley
+       - title: Compilers
+         link: http://www.imperial.ac.uk/computing/current-students/courses/221
+         prof: Dr. Naranker Dulay
+       - title: Concurrency
+         link: http://www.imperial.ac.uk/computing/current-students/courses/223
+         prof: Prof. Jeff Kramer
+       - title: Introduction to Artificial Intelligence
+         link: http://www.imperial.ac.uk/computing/current-students/courses/231
+         prof: Prof. Murray Shanahan
+       - title: Computational Techniques
+         link: http://www.imperial.ac.uk/computing/current-students/courses/233
+         prof: Dr. Stefanos Zafeiriou
+       - title: Models of Computation
+         link: http://www.imperial.ac.uk/computing/current-students/courses/240
+         prof: Prof. Philippa Gardner
+       - title: Statistics
+         link: http://www.imperial.ac.uk/computing/current-students/courses/245
+         prof: Dr. Jeremy Bradley
+    - year: 2015
+      courses:
+       - title: Network and Web Security
+         link: http://www.imperial.ac.uk/computing/current-students/courses/331
+         prof: Dr. Sergio Maffeis
+       - title: Scientific Computation
+         link: http://www.imperial.ac.uk/computing/current-students/courses/331
+         prof: Dr. Dan Moore
+       - title: Advanced Databases
+         link: http://www.imperial.ac.uk/computing/current-students/courses/572
+         prof: Dr. Peter McBrien
+       - title: Simulation and Modelling
+         link: http://www.imperial.ac.uk/computing/current-students/courses/337
+         prof: Dr. Anthony Field
+       - title: Machine Learning
+         link: http://www.imperial.ac.uk/computing/current-students/courses/395
+         prof: Dr. Ben Glocker
+       - title: Pervasive Computing
+         link: http://www.imperial.ac.uk/computing/current-students/courses/338
+         prof: Prof. Julie McCann
+    - year: 2016
+      courses:
+       - title: Advanced Compilers
+         link: http://www.imperial.ac.uk/computing/current-students/courses/444h/
+         prof: Dr. Ben Livshits
+       - title: Advanced Issues in Object Oriented Programming
+         link: http://www.imperial.ac.uk/computing/current-students/courses/471
+         prof: Prof. Sophia Drossopoulou
+       - title: Software Engineering for Industry
+         link: http://www.imperial.ac.uk/computing/current-students/courses/475
+         prof: Dr. Robert Chatley
+       - title: Knowledge Representation
+         link: http://www.imperial.ac.uk/computing/current-students/courses/491
+         prof: Prof. Marek Sergot
+       - title: Software Reliability
+         link: http://www.imperial.ac.uk/computing/current-students/courses/440H
+         prof: Dr. Cristian Cadar
+       - title: Large Scale Data Management
+         link: http://www.imperial.ac.uk/computing/current-students/courses/412H
+         prof: Dr. Thomas Heinis
+       - title: Privacy Enhancing Techniques
+         link: http://www.imperial.ac.uk/computing/current-students/courses/408
+         prof: Dr. Naranker Dulay
+       - title: Cryptography Engineering
+         link: http://www.imperial.ac.uk/computing/current-students/courses/409
+         prof: Prof. Michael Huth
+       - title: Scalable Distributed Systems Design
+         link: http://www.imperial.ac.uk/computing/current-students/courses/410H
+         prof: Prof. Peter Pietzuch
+- group_name: Pluralsight
+  years:
+    - year: 2916
+      courses:
+       - title: "Ethical Hacking: SQL Injection"
+         link: https://app.pluralsight.com/library/courses/ethical-hacking-sql-injection/
+         prof: Troy Hunt
+       - title: "Ethical Hacking: Reconnaissance/Footprinting"
+         link: https://app.pluralsight.com/library/courses/ethical-hacking-reconnaissance-footprinting/
+         prof: Dale Meredith
+       - title: "Play by Play: Ethical Hacking with Troy Hunt"
+         link: https://app.pluralsight.com/library/courses/play-by-play-ethical-hacking-troy-hunt/
+         prof: Troy Hunt

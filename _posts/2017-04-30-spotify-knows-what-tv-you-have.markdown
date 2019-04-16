@@ -1,11 +1,13 @@
 ---
+layout: post
 title:  "Spotify Knows What TV You Have"
-date:   2017-04-30 12:00:00 +0100
+date: 2017-04-30 12:00:00 +0100
 time_to_read: 2
-redirect_from: 2017/04/30/spotify-knows-what-tv-you-have.html
+has_code: true
+redirect_from: writing/spotify-knows-what-tv-you-have
 ---
 
-I was playing around with [WireShark](https://www.wireshark.org/) today and noticed something strange. My computer, despite running [NordVPN]({% post_url 2017-04-12-nord-vpn %}) and sending all web traffic over [OpenVPN](https://en.wikipedia.org/wiki/OpenVPN), was sending some HTTP requests.
+I was playing around with [WireShark](https://www.wireshark.org/) today and noticed something strange. My computer, despite running [NordVPN](https://nordvpn.com) and sending all web traffic over [OpenVPN](https://en.wikipedia.org/wiki/OpenVPN), was sending some HTTP requests.
 
 Here's one of the HTTP requests in question.
 
@@ -60,5 +62,3 @@ Huh? That's (redacted) information about my Sony TV (which never works properly.
 Some further Googling explained it. My TV hosts a [Universal Plug and Play](https://en.wikipedia.org/wiki/Universal_Plug_and_Play) (UPNP) service that allows other devices to discover it's presence. UPNP is used for stuff like wireless printers, gaming consoles, TVs, etc. It is possible to configure your router to [disable UPNP](https://www.forbes.com/sites/andygreenberg/2013/01/29/disable-a-protocol-called-upnp-on-your-router-now-to-avoid-a-serious-set-of-security-bugs/#5087d0a976b4), as many have done due to [vulnerabilities](https://en.wikipedia.org/wiki/Universal_Plug_and_Play#Problems_with_UPnP), but that might result in a loss of functionality.
 
 Spotify probably aren't using this device information for anything malicious. However, it strikes me that third parties (think Google, Amazon and others) can discover what devices you have in your home and could use this to improve their ad targeting.
-
-If there are any security mechanisms that prevent this, I'd love to hear about them.

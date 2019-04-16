@@ -1,6 +1,8 @@
 ---
+layout: post
 title:  "My Git Workflow"
-date:   2018-02-26 12:00:00 +0100
+date: 2018-02-26 12:00:00 +0100
+has_code: true
 time_to_read: 5
 ---
 
@@ -28,16 +30,6 @@ git branch -d <BRANCH_NAME>
 
 ### Commits
 I strongly believe that every commit in a git history should be in a working state. In other words, I should be able to [revert](https://git-scm.com/docs/git-revert) or rollback to a certain commit and have the code work (compile or run without errors). This gives me confidence that if something breaks on master, someone can just pick a random commit and revert to it without having to figure out that it works.
-
-<div class="center-media img-container" alt="xkcd: Git Commit">
-    {% include svg/git_commit.jpg.svg %}
-    <img src="/assets/imgs/git_commit.jpg" class="overlay-img">
-</div>
-<p class="image-label">
-    <a href="https://xkcd.com/1296/">xkcd: Git Commit</a>
-    <br/>
-    A relevant comic
-</p>
 
 That doesn’t mean that each feature branch just has one commit, it just means that each commit works in it’s own right. This also doesn’t stop me from committing often, I just tend to amend my previous commit until I’m happy with it. I’m ok [“changing history”](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History) on feature branches as no one really cares about their history. On the other hand, I never (and I mean never) amend a commit on master. This goes back to my point of never committing on the master branch.
 

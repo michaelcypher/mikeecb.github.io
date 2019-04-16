@@ -1,5 +1,8 @@
 ---
+layout: post
 title:  "Cryptopals Set 3"
+date:   2017-07-14 12:00:00 +0100
+has_code: true
 time_to_read: 12
 ---
 
@@ -22,9 +25,6 @@ Welcome to the third installment of my [Cryptopals Challenges](http://cryptopals
 
 <h3 id="17-cbc-padding-oracle">
   17. The CBC padding oracle
-  <a class="no-underline" href="#17-cbc-padding-oracle">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 The first part of this exercise asks us to write a function to pad and encrypt a random string in a set of given plaintexts and to write a function that checks the padding of the plaintext given the ciphertext, iv and key.
@@ -155,9 +155,6 @@ print plaintext
 
 <h3 id="18-implement-ctr">
   18. Implement CTR, the stream cipher mode
-  <a class="no-underline" href="#18-implement-ctr">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This challenge involves implementing the [CTR encryption mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_.28CTR.29) (otherwise known as **COUNTER** mode for good reason). I'm not going to explain how it works as the challenge does a good job of doing that. However, remember to decode the ciphertext provided!
@@ -201,9 +198,6 @@ print aes_128_ctr(
 
 <h3 id="19-break-fixed-nonce-ctr-mode-using-substitutions">
   19. Break fixed-nonce CTR mode using substitutions
-  <a class="no-underline" href="#19-break-fixed-nonce-ctr-mode-using-substitutions">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This problem teaches us how to break encryption in CTR mode if the nonce and key used is the same for multiple ciphertexts.
@@ -295,9 +289,6 @@ I'm pretty sure this could be avoided using common English 2/3-grams. Unfortunat
 
 <h3 id="20-break-fixed-nonce-ctr-statistically">
   20. Break fixed-nonce CTR statistically
-  <a class="no-underline" href="#20-break-fixed-nonce-ctr-statistically">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 Ok, so mistakes were made! I actually solved this (in a sense), in [exercise 19](#19-break-fixed-nonce-ctr-mode-using-substitutions). I should have done it manually in exercise 19 and statistically now. Let's do it slightly differently using our solution from [exercise 6]({% post_url 2017-04-20-cryptopals-challenge-set-1%}#6-breaking-repeating-key-xor)!
@@ -336,9 +327,6 @@ print plaintext
 
 <h3 id="21-implement-mt19937-mersenne-twister-rng">
   21. Implement the MT19937 Mersenne Twister RNG
-  <a class="no-underline" href="#21-implement-mt19937-mersenne-twister-rng">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 This exercise asks the victim (me) to implement the [Mersenne Twister RNG](https://en.wikipedia.org/wiki/Mersenne_Twister), the most widely used general-purpose [pseudorandom number generator](https://en.wikipedia.org/wiki/Pseudorandom_number_generator). We're instructed to use the pseudo-code from the [Wikipedia article](https://en.wikipedia.org/wiki/Mersenne_Twister) but since it already provides a Python implementation, I'm using that. Next! 
@@ -347,9 +335,6 @@ This exercise asks the victim (me) to implement the [Mersenne Twister RNG](https
 
 <h3 id="22-crack-an-mt19937-seed">
   22. Crack an MT19937 seed
-  <a class="no-underline" href="#22-crack-an-mt19937-seed">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In this challenge, we crack a MT19937 seed! However, our cracking program assumes that the random numbers generated are seeded with a UNIX timestamp. Realistically, I believe a lot of people out there will seed their PRNGs with the current system time so this seems like a realistic attack. I decided to brute force this!
@@ -381,9 +366,6 @@ print crack_seed()
 
 <h3 id="23-clone-mt19937-rng-from-output">
   23. Clone an MT19937 RNG from its output
-  <a class="no-underline" href="#23-clone-mt19937-rng-from-output">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In this exercise, we copy a MT19937 PRNG! Essentially, we can copy the state of an existing MT19937 by observing 624 consecutive generated random numbers and "untemper-ing" them! Attackers can learn what your PRNG will produce in the future using this method!
@@ -436,9 +418,6 @@ assert_prngs_equal(prng, copied_prng)
 
 <h3 id="24-create-mt19937-stream-cipher-and-break-it">
   24. Create the MT19937 stream cipher and break it
-  <a class="no-underline" href="#24-create-mt19937-stream-cipher-and-break-it">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 Ok, we're at the last exercise in this set of challenges! In this exercise we're tasked with writing a (broken) stream cipher that's based on the MT19937 PRNG and then breaking it. First things first, let's create the stream cipher!

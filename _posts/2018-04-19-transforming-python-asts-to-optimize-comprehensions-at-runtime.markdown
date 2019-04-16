@@ -1,7 +1,9 @@
 ---
-title:  "Transforming Python ASTs to Optimize Comprehensions"
-date:   2018-04-19 17:00:00 -0700
+layout: post
+title: "Transforming Python ASTs to Optimize Comprehensions"
+date: 2018-04-19 17:00:00 -0700
 time_to_read: 25-30
+has_code: true
 redirect_from: writing/transforming_python_asts_to_optimize_comprehensions_at_runtime
 ---
 
@@ -13,17 +15,10 @@ I _love_ list, dict and set comprehensions in Python. It's the one feature of th
 
 In this blog post, I'll briefly describe comprehensions, explain a performance disadvantage that I frequently face, and show you some code that mitigates this disadvantage by transforming them at runtime.
 
-<div class="center-media img-container" alt="A very relevant stock photo of an iguana">
-    {% include svg/iguana.jpg.svg %}
-    <img src="/assets/imgs/iguana.jpg" class="overlay-img">
-</div>
-<p class="image-label">A very relevant stock photo of an iguana</p>
+<img src="/assets/imgs/iguana-1.jpeg" alt="An iguana" />
 
 <h3 id="what-are-comprehensions">
   What are comprehensions
-  <a class="no-underline" href="#what-are-comprehensions">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 If you're already familiar with comprehensions, feel free to skip this section! If not, I'll provide a quick breakdown.
@@ -74,11 +69,8 @@ acc = [
 {% endhighlight %}
 
 
-<h3 id="eomprehensive-shortcomings">
+<h3 id="comprehensive-shortcomings">
   Comprehensive shortcomings
-  <a class="no-underline" href="#comprehensive-shortcomings">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In my opinion, there's one large shortcoming of comprehensions over their procedural cousins. `for` loops contain statements (e.g. `x = foo(y)`) whereas comprehensions can only contain expressions (e.g. `x + foo(y)`) and are in fact expressions themselves. As a result, we can't alias the return value of a function call so to use it again. This wouldn't be an issue if assignments in Python were treated as expressions (like in C or C++), but they're treated as statements.
@@ -122,9 +114,6 @@ acc = [
 
 <h3 id="lets-build-a-compiler">
   Let's build a compiler!
-  <a class="no-underline" href="#lets-build-a-compiler">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 One idea is to take an inefficient, but clean and concise comprehension and optimize away duplicate and equivalent function calls so that it's efficient but ugly (i.e. the 2nd work-around mentioned above). The act of taking a program and rewriting it be quicker while sacrifising clarify is something most compilers do for you, so on the surface this idea doesn't seem unreasonable.
@@ -142,10 +131,7 @@ However, building an end-to-end compiler is hard and is usually broken into [mul
 
 
 <h3 id="pythons-ast-module-to-the-rescue">
-  Python's <a href="https://docs.python.org/2/library/ast.html">`ast`</a> module to the rescue!
-  <a class="no-underline" href="#pythons-ast-module-to-the-rescue">
-    {% include svg/link_icon.svg %}
-  </a>
+  Python's <a href="https://docs.python.org/2/library/ast.html"><code class="highlighter-rouge">ast</code></a> module to the rescue!
 </h3>
 
 Luckily, Python's standard library has an `ast` module that can take some Python source code as input and produce an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (AST). It also provides a [`NodeVisitor`](https://docs.python.org/2/library/ast.html#ast.NodeVisitor) and [`NodeTransformer`](https://docs.python.org/2/library/ast.html#ast.NodeTransformer) that let's us easily walk the structure of a Python program in tree form and transform it as we go. Python also has a built-in [`compile`](https://docs.python.org/2/library/functions.html#compile) function that takes an AST (or string) as input and compiles it into a code object that can then be executed. 
@@ -272,11 +258,7 @@ class OptimizeComprehensions(NodeTransformer):
 
 The next step is to replace each duplicate `Call` node with a `Name` node. In Python terms, this means replacing duplicate function calls with variables.
 
-<div class="center-media img-container" alt="Another iguana stock photo to reward you for your patience">
-    {% include svg/iguana-2.jpg.svg %}
-    <img src="/assets/imgs/iguana-2.jpg" class="overlay-img">
-</div>
-<p class="image-label">Another iguana stock photo to reward you for your patience</p>
+<img src="/assets/imgs/iguana-2.jpeg" alt="Another iguana" />
 
 This is fairly trivial, but there is one decision we have to make. How do we generate variable names from a function call? I've chosen a simple but ugly solution: hash the formatted function dump and prepend it with double underscores (as Python variable names cannot start with numbers). If we were to inspect our transformed comprehension, we may see variables that look like `__258792`. This solution is "ugly" as it's vulnerable to hash collisions. However, for the purpose of this blog post, we're going to pretend they don't exist.
 
@@ -434,6 +416,7 @@ def multiple_generators_with_same_target_variable_name(expensive_func):
         for x in [x * x]
         if expensive_func(x)
     ]
+
 def test_multiple_generators_with_same_target_variable_name():
     expensive_func = mock.Mock(return_value=True)
     assert multiple_generators_with_same_target_variable_name(
@@ -448,16 +431,13 @@ def test_multiple_generators_with_same_target_variable_name():
 
 <h3 id="to-conclude-weve-done-it">
   To conclude, we've done it!
-  <a class="no-underline" href="#to-conclude-weve-done-it">
-    {% include svg/link_icon.svg %}
-  </a>
 </h3>
 
 In 200 lines of Python (including docstrings, comments and imports), we've built an optimizer that takes potentially slow but elegant comprehensions and produces ugly but fast comprehensions at runtime.
 
 For simple comprehensions with a duplicate function call, the execution time of our optimized version converges to half the execution time of the original, as the time it takes to execute the function increases. The line chart below illustrates this statement and was generated by comparing the execution time of list comprehension before and after optimization (see [GitHub gist](https://gist.github.com/mikeecb/d21dab6fb9f8632ec10e18bcbabd3219) for script).
 
-{% include svg/comprehension_graph.svg %}
+<img src="/assets/imgs/comprehension-graph.svg" alt="A graph comparing the execution time of list comprehensions before and after optimization" />
 
 Anyway, I hope you've enjoyed reading this walk-through and here's a [GitHub gist](https://gist.github.com/mikeecb/4a310051840c96a237204045243419db) of the optimzer code we've gone through! Feel free to run it, modify it and distribute it. I may polish it up one day and publish to PyPI for all to use.
 
