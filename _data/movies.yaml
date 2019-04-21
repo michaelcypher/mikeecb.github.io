@@ -5,19 +5,20 @@
   release_date: '2004-07-15'
   title: I, Robot
 - genres:
-  - Thriller
-  id: 6145
-  release_date: '2007-04-20'
-  title: Fracture
-- genres:
   - Comedy
   id: 8193
   release_date: '2004-06-11'
   title: Napoleon Dynamite
 - genres:
+  - Thriller
+  id: 6145
+  release_date: '2007-04-20'
+  title: Fracture
+- genres:
   - Crime
   - Drama
   - Thriller
+  - Action
   id: 75780
   release_date: '2012-12-20'
   title: Jack Reacher
@@ -49,11 +50,10 @@
 - genres:
   - Adventure
   - Action
-  - Thriller
-  - Mystery
-  id: 2059
-  release_date: '2004-11-19'
-  title: National Treasure
+  - Science Fiction
+  id: 11
+  release_date: '1977-05-25'
+  title: Star Wars
 - genres:
   - Animation
   - Family
@@ -61,12 +61,13 @@
   release_date: '2003-05-30'
   title: Finding Nemo
 - genres:
-  - Comedy
-  - Drama
-  - Romance
-  id: 13
-  release_date: '1994-07-06'
-  title: Forrest Gump
+  - Adventure
+  - Action
+  - Thriller
+  - Mystery
+  id: 2059
+  release_date: '2004-11-19'
+  title: National Treasure
 - genres:
   - Drama
   id: 14
@@ -81,12 +82,12 @@
   release_date: '2007-06-22'
   title: Ratatouille
 - genres:
-  - Adventure
-  - Action
-  - Science Fiction
-  id: 11
-  release_date: '1977-05-25'
-  title: Star Wars
+  - Comedy
+  - Drama
+  - Romance
+  id: 13
+  release_date: '1994-07-06'
+  title: Forrest Gump
 - genres:
   - Adventure
   - Fantasy
@@ -157,6 +158,11 @@
   release_date: '2007-07-27'
   title: The Simpsons Movie
 - genres:
+  - Drama
+  id: 376867
+  release_date: '2016-10-21'
+  title: Moonlight
+- genres:
   - Action
   - Science Fiction
   - Adventure
@@ -164,11 +170,6 @@
   id: 34851
   release_date: '2010-07-03'
   title: Predators
-- genres:
-  - Drama
-  id: 376867
-  release_date: '2016-10-21'
-  title: Moonlight
 - genres:
   - Fantasy
   - Comedy
@@ -202,10 +203,13 @@
   release_date: '2008-02-13'
   title: Jumper
 - genres:
-  - Comedy
-  id: 32823
-  release_date: '2010-06-04'
-  title: Get Him to the Greek
+  - Thriller
+  - Drama
+  - Crime
+  - Mystery
+  id: 18487
+  release_date: '2009-06-11'
+  title: The Taking of Pelham 1 2 3
 - genres:
   - Comedy
   - Romance
@@ -220,13 +224,10 @@
   release_date: '2006-06-20'
   title: 'Pirates of the Caribbean: Dead Man''s Chest'
 - genres:
-  - Thriller
-  - Drama
-  - Crime
-  - Mystery
-  id: 18487
-  release_date: '2009-06-11'
-  title: The Taking of Pelham 1 2 3
+  - Comedy
+  id: 32823
+  release_date: '2010-06-04'
+  title: Get Him to the Greek
 - genres:
   - Drama
   id: 70
@@ -261,9 +262,10 @@
   title: Mars Attacks!
 - genres:
   - Comedy
-  id: 2123
-  release_date: '2000-06-22'
-  title: Me, Myself & Irene
+  - War
+  id: 10313
+  release_date: '2009-10-17'
+  title: The Men Who Stare at Goats
 - genres:
   - Mystery
   - Thriller
@@ -271,30 +273,13 @@
   release_date: '2000-10-11'
   title: Memento
 - genres:
+  - Adventure
+  - Animation
   - Comedy
-  - War
-  id: 10313
-  release_date: '2009-10-17'
-  title: The Men Who Stare at Goats
-- genres:
-  - Drama
-  id: 10316
-  release_date: '2011-09-24'
-  title: The Ides of March
-- genres:
-  - Drama
-  - Horror
-  - Thriller
-  id: 10320
-  release_date: '2005-03-17'
-  title: The Ring Two
-- genres:
-  - Action
-  - Crime
-  - Thriller
-  id: 180299
-  release_date: '2014-03-27'
-  title: The Raid 2
+  - Family
+  id: 10315
+  release_date: '2009-10-23'
+  title: Fantastic Mr. Fox
 - genres:
   - Thriller
   - Drama
@@ -303,10 +288,10 @@
   release_date: '2007-04-12'
   title: Disturbia
 - genres:
-  - Comedy
-  id: 8275
-  release_date: '2006-12-07'
-  title: 'American Pie Presents: The Naked Mile'
+  - Drama
+  id: 10316
+  release_date: '2011-09-24'
+  title: The Ides of March
 - genres:
   - Comedy
   - Romance
@@ -315,8 +300,27 @@
   title: American Wedding
 - genres:
   - Drama
+  - Horror
+  - Thriller
+  id: 10320
+  release_date: '2005-03-17'
+  title: The Ring Two
+- genres:
+  - Comedy
+  id: 8275
+  release_date: '2006-12-07'
+  title: 'American Pie Presents: The Naked Mile'
+- genres:
+  - Family
+  - Fantasy
+  - Romance
+  id: 321612
+  release_date: '2017-03-16'
+  title: Beauty and the Beast
+- genres:
+  - Drama
   id: 2133
-  release_date: '2000-03-15'
+  release_date: '2000-06-26'
   title: The Perfect Storm
 - genres:
   - Comedy
@@ -380,7 +384,6 @@
   title: Scarface
 - genres:
   - Science Fiction
-  - Thriller
   id: 335984
   release_date: '2017-10-04'
   title: Blade Runner 2049
@@ -477,7 +480,6 @@
   release_date: '1993-02-11'
   title: Groundhog Day
 - genres:
-  - Thriller
   - Drama
   - Science Fiction
   - Mystery
@@ -507,17 +509,17 @@
   release_date: '2013-12-25'
   title: The Wolf of Wall Street
 - genres:
-  - Comedy
-  id: 4247
-  release_date: '2000-07-07'
-  title: Scary Movie
-- genres:
   - Science Fiction
   - Horror
   - Thriller
   id: 430231
   release_date: '2018-04-06'
   title: The Endless
+- genres:
+  - Comedy
+  id: 4247
+  release_date: '2000-07-07'
+  title: Scary Movie
 - genres:
   - Comedy
   id: 16538
@@ -597,7 +599,7 @@
 - genres:
   - Documentary
   id: 520370
-  release_date: '2018-04-27'
+  release_date: '2018-12-07'
   title: The American Meme
 - genres:
   - Action
@@ -650,13 +652,6 @@
   title: 'Solo: A Star Wars Story'
 - genres:
   - Family
-  - Fantasy
-  - Romance
-  id: 321612
-  release_date: '2017-03-16'
-  title: Beauty and the Beast
-- genres:
-  - Family
   - Animation
   - Fantasy
   - Music
@@ -702,6 +697,11 @@
   release_date: '2011-12-14'
   title: The Girl with the Dragon Tattoo
 - genres:
+  - Documentary
+  id: 512218
+  release_date: '2018-04-27'
+  title: Transformer
+- genres:
   - Action
   - Adventure
   - Comedy
@@ -709,6 +709,11 @@
   id: 14560
   release_date: '2009-01-15'
   title: 'Paul Blart: Mall Cop'
+- genres:
+  - Comedy
+  id: 411873
+  release_date: '2017-06-30'
+  title: The Little Hours
 - genres:
   - Action
   - Adventure
@@ -793,18 +798,18 @@
   release_date: '2014-05-28'
   title: Maleficent
 - genres:
+  - Horror
+  - Thriller
+  id: 346364
+  release_date: '2017-09-06'
+  title: It
+- genres:
   - Animation
   - Comedy
   - Family
   id: 2300
   release_date: '1996-11-15'
   title: Space Jam
-- genres:
-  - Horror
-  - Thriller
-  id: 346364
-  release_date: '2017-09-06'
-  title: It
 - genres:
   - Adventure
   - Drama
@@ -819,13 +824,6 @@
   release_date: '2007-08-29'
   title: Atonement
 - genres:
-  - Adventure
-  - Action
-  - Animation
-  id: 2310
-  release_date: '2007-11-05'
-  title: Beowulf
-- genres:
   - Science Fiction
   - Action
   - Adventure
@@ -835,6 +833,13 @@
   release_date: '2014-08-07'
   title: Teenage Mutant Ninja Turtles
 - genres:
+  - Adventure
+  - Action
+  - Animation
+  id: 2310
+  release_date: '2007-11-05'
+  title: Beowulf
+- genres:
   - Drama
   - Action
   id: 8456
@@ -843,8 +848,6 @@
 - genres:
   - Thriller
   - Drama
-  - Science Fiction
-  - Horror
   id: 405774
   release_date: '2018-12-13'
   title: Bird Box
@@ -870,6 +873,12 @@
   id: 274
   release_date: '1991-02-01'
   title: The Silence of the Lambs
+- genres:
+  - Horror
+  - Thriller
+  id: 256274
+  release_date: '2014-08-14'
+  title: As Above, So Below
 - genres:
   - Comedy
   id: 8467
@@ -901,11 +910,11 @@
   release_date: '2007-05-19'
   title: 'Pirates of the Caribbean: At World''s End'
 - genres:
-  - Adventure
-  - Drama
-  id: 20766
-  release_date: '2009-11-25'
-  title: The Road
+  - Comedy
+  - Romance
+  id: 225565
+  release_date: '2014-01-29'
+  title: That Awkward Moment
 - genres:
   - Family
   - Animation
@@ -913,6 +922,12 @@
   id: 10527
   release_date: '2008-10-30'
   title: 'Madagascar: Escape 2 Africa'
+- genres:
+  - Adventure
+  - Drama
+  id: 20766
+  release_date: '2009-11-25'
+  title: The Road
 - genres:
   - Action
   - Adventure
@@ -922,12 +937,6 @@
   release_date: '2009-12-23'
   title: Sherlock Holmes
 - genres:
-  - Comedy
-  - Romance
-  id: 225565
-  release_date: '2014-01-29'
-  title: That Awkward Moment
-- genres:
   - Science Fiction
   - Drama
   - Romance
@@ -935,13 +944,6 @@
   id: 31011
   release_date: '2009-11-06'
   title: Mr. Nobody
-- genres:
-  - Comedy
-  - Drama
-  - Romance
-  id: 8488
-  release_date: '2005-02-11'
-  title: Hitch
 - genres:
   - Action
   - Crime
@@ -951,18 +953,18 @@
   release_date: '1969-06-02'
   title: The Italian Job
 - genres:
+  - Comedy
+  - Drama
+  - Romance
+  id: 8488
+  release_date: '2005-02-11'
+  title: Hitch
+- genres:
   - Crime
   - Thriller
   id: 298
   release_date: '2007-06-06'
   title: Ocean's Thirteen
-- genres:
-  - Action
-  - Thriller
-  - Crime
-  id: 51497
-  release_date: '2011-04-20'
-  title: Fast Five
 - genres:
   - Mystery
   - Science Fiction
@@ -971,17 +973,23 @@
   release_date: '2009-11-06'
   title: The Fourth Kind
 - genres:
+  - Thriller
+  - Science Fiction
+  id: 22825
+  release_date: '2009-09-17'
+  title: The Box
+- genres:
   - Comedy
   - Drama
   id: 37165
   release_date: '1998-06-04'
   title: The Truman Show
 - genres:
-  - Thriller
-  - Science Fiction
-  id: 22825
-  release_date: '2009-09-17'
-  title: The Box
+  - Drama
+  - Romance
+  id: 413998
+  release_date: '2017-06-08'
+  title: My Cousin Rachel
 - genres:
   - Drama
   - Horror
@@ -989,11 +997,12 @@
   release_date: '2016-11-11'
   title: Raw
 - genres:
-  - Drama
-  - Romance
-  id: 413998
-  release_date: '2017-06-08'
-  title: My Cousin Rachel
+  - Action
+  - Thriller
+  - Crime
+  id: 51497
+  release_date: '2011-04-20'
+  title: Fast Five
 - genres:
   - Fantasy
   - Comedy
@@ -1082,12 +1091,6 @@
   release_date: '2006-06-30'
   title: The Devil Wears Prada
 - genres:
-  - Comedy
-  - Romance
-  id: 10591
-  release_date: '2004-04-09'
-  title: The Girl Next Door
-- genres:
   - Thriller
   - Action
   - Drama
@@ -1097,14 +1100,15 @@
   title: Rise of the Planet of the Apes
 - genres:
   - Comedy
+  - Romance
+  id: 10591
+  release_date: '2004-04-09'
+  title: The Girl Next Door
+- genres:
+  - Comedy
   id: 18785
   release_date: '2009-06-02'
   title: The Hangover
-- genres:
-  - Drama
-  id: 22881
-  release_date: '2009-11-20'
-  title: The Blind Side
 - genres:
   - Adventure
   - Drama
@@ -1120,6 +1124,11 @@
   id: 493922
   release_date: '2018-06-04'
   title: Hereditary
+- genres:
+  - Drama
+  id: 22881
+  release_date: '2009-11-20'
+  title: The Blind Side
 - genres:
   - Horror
   - Thriller
@@ -1143,6 +1152,13 @@
   release_date: '2015-07-10'
   title: The Lobster
 - genres:
+  - Drama
+  - Mystery
+  - Thriller
+  id: 37233
+  release_date: '1993-06-30'
+  title: The Firm
+- genres:
   - Action
   - Adventure
   - Fantasy
@@ -1150,13 +1166,6 @@
   id: 49521
   release_date: '2013-06-12'
   title: Man of Steel
-- genres:
-  - Drama
-  - Mystery
-  - Thriller
-  id: 37233
-  release_date: '1993-06-30'
-  title: The Firm
 - genres:
   - Crime
   - Action
@@ -1195,13 +1204,6 @@
   release_date: '2011-06-01'
   title: 'X-Men: First Class'
 - genres:
-  - Crime
-  - Drama
-  - Thriller
-  id: 388
-  release_date: '2006-03-23'
-  title: Inside Man
-- genres:
   - Comedy
   - Adventure
   - Crime
@@ -1210,6 +1212,13 @@
   id: 10628
   release_date: '2003-01-17'
   title: Kangaroo Jack
+- genres:
+  - Crime
+  - Drama
+  - Thriller
+  id: 388
+  release_date: '2006-03-23'
+  title: Inside Man
 - genres:
   - Adventure
   - Fantasy
@@ -1225,18 +1234,18 @@
   release_date: '2004-04-16'
   title: 'Kill Bill: Vol. 2'
 - genres:
-  - War
-  - Action
-  id: 190859
-  release_date: '2014-12-11'
-  title: American Sniper
-- genres:
   - Family
   - Animation
   - Drama
   id: 8587
   release_date: '1994-05-07'
   title: The Lion King
+- genres:
+  - War
+  - Action
+  id: 190859
+  release_date: '2014-12-11'
+  title: American Sniper
 - genres:
   - Fantasy
   - Adventure
@@ -1303,6 +1312,13 @@
   release_date: '1997-06-20'
   title: Batman & Robin
 - genres:
+  - Action
+  - Drama
+  - Western
+  id: 4512
+  release_date: '2007-09-02'
+  title: The Assassination of Jesse James by the Coward Robert Ford
+- genres:
   - Drama
   - Romance
   id: 22947
@@ -1315,17 +1331,24 @@
   release_date: '2008-06-05'
   title: You Don't Mess with the Zohan
 - genres:
+  - Comedy
+  - Drama
+  id: 10663
+  release_date: '1998-11-06'
+  title: The Waterboy
+- genres:
   - Drama
   - War
   id: 423
   release_date: '2002-09-17'
   title: The Pianist
 - genres:
-  - Comedy
-  - Drama
-  id: 10663
-  release_date: '1998-11-06'
-  title: The Waterboy
+  - Thriller
+  - Horror
+  - Mystery
+  id: 10665
+  release_date: '2008-05-29'
+  title: The Strangers
 - genres:
   - Animation
   - Comedy
@@ -1335,24 +1358,18 @@
   release_date: '2002-03-10'
   title: Ice Age
 - genres:
-  - Thriller
-  - Horror
-  - Mystery
-  id: 10665
-  release_date: '2008-05-29'
-  title: The Strangers
-- genres:
   - Adventure
   - Drama
+  - War
   id: 8619
   release_date: '2003-11-14'
   title: 'Master and Commander: The Far Side of the World'
 - genres:
   - Comedy
-  - Romance
-  id: 55721
-  release_date: '2011-05-13'
-  title: Bridesmaids
+  - Fantasy
+  id: 72105
+  release_date: '2012-06-29'
+  title: Ted
 - genres:
   - Western
   id: 429
@@ -1373,10 +1390,10 @@
   title: The One I Love
 - genres:
   - Comedy
-  - Fantasy
-  id: 72105
-  release_date: '2012-06-29'
-  title: Ted
+  - Romance
+  id: 55721
+  release_date: '2011-05-13'
+  title: Bridesmaids
 - genres:
   - Crime
   - Drama
@@ -1412,6 +1429,11 @@
   release_date: '2008-06-22'
   title: "WALL\xB7E"
 - genres:
+  - Comedy
+  id: 2123
+  release_date: '2000-06-22'
+  title: Me, Myself & Irene
+- genres:
   - Horror
   - Comedy
   - Thriller
@@ -1442,6 +1464,14 @@
   release_date: '2005-09-09'
   title: The Exorcism of Emily Rose
 - genres:
+  - Animation
+  - Family
+  - Adventure
+  - Fantasy
+  id: 10693
+  release_date: '1953-02-05'
+  title: Peter Pan
+- genres:
   - Action
   - Drama
   - Mystery
@@ -1457,19 +1487,17 @@
   release_date: '2004-07-23'
   title: The Bourne Supremacy
 - genres:
-  - Action
-  - Drama
-  - Mystery
-  - Thriller
-  id: 2503
-  release_date: '2007-08-03'
-  title: The Bourne Ultimatum
-- genres:
   - Drama
   - Romance
   id: 453
   release_date: '2001-12-11'
   title: A Beautiful Mind
+- genres:
+  - Drama
+  - Romance
+  id: 454
+  release_date: '1996-11-01'
+  title: Romeo + Juliet
 - genres:
   - Comedy
   - Drama
@@ -1478,20 +1506,19 @@
   release_date: '2002-04-11'
   title: Bend It Like Beckham
 - genres:
+  - Action
   - Drama
-  - Romance
-  id: 454
-  release_date: '1996-11-01'
-  title: Romeo + Juliet
+  - Mystery
+  - Thriller
+  id: 2503
+  release_date: '2007-08-03'
+  title: The Bourne Ultimatum
 - genres:
-  - Animation
-  - Music
-  - Family
-  - Adventure
-  - Fantasy
-  id: 10693
-  release_date: '1953-02-05'
-  title: Peter Pan
+  - Comedy
+  - Drama
+  id: 489925
+  release_date: '2018-01-19'
+  title: Eighth Grade
 - genres:
   - Drama
   - Science Fiction
@@ -1524,6 +1551,13 @@
   release_date: '2010-10-20'
   title: Paranormal Activity 2
 - genres:
+  - Drama
+  - History
+  - Comedy
+  id: 375262
+  release_date: '2018-11-23'
+  title: The Favourite
+- genres:
   - Comedy
   - Family
   - Fantasy
@@ -1539,16 +1573,16 @@
   release_date: '2009-08-18'
   title: Inglourious Basterds
 - genres:
+  - Drama
+  id: 489
+  release_date: '1997-12-05'
+  title: Good Will Hunting
+- genres:
   - Action
   - Thriller
   id: 8681
   release_date: '2008-02-18'
   title: Taken
-- genres:
-  - Drama
-  id: 489
-  release_date: '1997-12-05'
-  title: Good Will Hunting
 - genres:
   - Action
   - Adventure
@@ -1666,6 +1700,13 @@
   title: The Blues Brothers
 - genres:
   - Adventure
+  - Science Fiction
+  - Action
+  id: 299534
+  release_date: '2019-04-24'
+  title: 'Avengers: Endgame'
+- genres:
+  - Adventure
   - Action
   - Fantasy
   id: 299536
@@ -1736,18 +1777,17 @@
   release_date: '2004-06-25'
   title: Spider-Man 2
 - genres:
-  - Fantasy
-  - Action
-  - Adventure
-  id: 559
-  release_date: '2007-05-01'
-  title: Spider-Man 3
-- genres:
   - Comedy
   - Horror
   id: 346671
   release_date: '2017-08-08'
   title: Little Evil
+- genres:
+  - Drama
+  - Horror
+  id: 242224
+  release_date: '2014-05-22'
+  title: The Babadook
 - genres:
   - Comedy
   id: 2609
@@ -1781,20 +1821,19 @@
   release_date: '2002-10-18'
   title: The Ring
 - genres:
-  - Drama
-  - Thriller
-  - Horror
-  id: 242224
-  release_date: '2014-05-22'
-  title: The Babadook
-- genres:
   - Action
   - Adventure
   - Science Fiction
-  - Thriller
   id: 76341
   release_date: '2015-05-13'
   title: 'Mad Max: Fury Road'
+- genres:
+  - Fantasy
+  - Action
+  - Adventure
+  id: 559
+  release_date: '2007-05-01'
+  title: Spider-Man 3
 - genres:
   - Drama
   - History
@@ -1840,9 +1879,7 @@
   title: Green Room
 - genres:
   - Action
-  - Thriller
   - Science Fiction
-  - Mystery
   - Adventure
   id: 27205
   release_date: '2010-07-15'
@@ -1875,11 +1912,11 @@
   release_date: '2001-11-01'
   title: Monsters, Inc.
 - genres:
+  - Comedy
   - Horror
-  - Thriller
-  id: 82505
-  release_date: '2012-09-21'
-  title: House at the End of the Street
+  id: 43593
+  release_date: '2010-08-20'
+  title: Piranha 3D
 - genres:
   - Adventure
   - Fantasy
@@ -1888,11 +1925,11 @@
   release_date: '2003-12-25'
   title: Big Fish
 - genres:
-  - Comedy
   - Horror
-  id: 43593
-  release_date: '2010-08-20'
-  title: Piranha 3D
+  - Thriller
+  id: 82505
+  release_date: '2012-09-21'
+  title: House at the End of the Street
 - genres:
   - Comedy
   - Family
@@ -1906,6 +1943,13 @@
   id: 591
   release_date: '2006-05-17'
   title: The Da Vinci Code
+- genres:
+  - Thriller
+  - Comedy
+  - Drama
+  id: 2640
+  release_date: '1989-03-31'
+  title: Heathers
 - genres:
   - Drama
   - Romance
@@ -1941,13 +1985,14 @@
   release_date: '2011-02-14'
   title: Paul
 - genres:
-  - Adventure
   - Action
+  - Adventure
+  - Comedy
+  - Crime
   - Thriller
-  - Science Fiction
-  id: 604
-  release_date: '2003-05-15'
-  title: The Matrix Reloaded
+  id: 39514
+  release_date: '2010-10-13'
+  title: RED
 - genres:
   - Adventure
   - Action
@@ -1958,13 +2003,10 @@
   title: The Matrix Revolutions
 - genres:
   - Action
-  - Adventure
-  - Comedy
-  - Crime
-  - Thriller
-  id: 39514
-  release_date: '2010-10-13'
-  title: RED
+  - Science Fiction
+  id: 603
+  release_date: '1999-03-30'
+  title: The Matrix
 - genres:
   - Action
   - Adventure
@@ -1982,11 +2024,20 @@
   release_date: '2002-07-03'
   title: Men in Black II
 - genres:
+  - Comedy
+  - Crime
+  - Drama
+  id: 16991
+  release_date: '2009-04-10'
+  title: Observe and Report
+- genres:
+  - Adventure
   - Action
+  - Thriller
   - Science Fiction
-  id: 603
-  release_date: '1999-03-30'
-  title: The Matrix
+  id: 604
+  release_date: '2003-05-15'
+  title: The Matrix Reloaded
 - genres:
   - Drama
   - History
@@ -2032,16 +2083,16 @@
   title: Signs
 - genres:
   - Comedy
+  id: 316023
+  release_date: '2016-07-07'
+  title: Mike and Dave Need Wedding Dates
+- genres:
+  - Comedy
   - Crime
   - Drama
   id: 37495
   release_date: '2010-05-07'
   title: Four Lions
-- genres:
-  - Comedy
-  id: 316023
-  release_date: '2016-07-07'
-  title: Mike and Dave Need Wedding Dates
 - genres:
   - Comedy
   - Romance
@@ -2099,18 +2150,17 @@
   title: Evan Almighty
 - genres:
   - Adventure
-  - Drama
-  - War
-  id: 652
-  release_date: '2004-05-03'
-  title: Troy
-- genres:
-  - Adventure
   - Fantasy
   - Family
   id: 8844
   release_date: '1995-12-15'
   title: Jumanji
+- genres:
+  - Adventure
+  - History
+  id: 652
+  release_date: '2004-05-03'
+  title: Troy
 - genres:
   - Animation
   - Family
@@ -2184,12 +2234,6 @@
   release_date: '1986-07-18'
   title: Aliens
 - genres:
-  - Thriller
-  - Crime
-  id: 680
-  release_date: '1994-09-10'
-  title: Pulp Fiction
-- genres:
   - Music
   - Comedy
   id: 8872
@@ -2201,6 +2245,12 @@
   id: 96936
   release_date: '2013-06-12'
   title: The Bling Ring
+- genres:
+  - Thriller
+  - Crime
+  id: 680
+  release_date: '1994-09-10'
+  title: Pulp Fiction
 - genres:
   - Comedy
   - Romance
@@ -2214,12 +2264,25 @@
   release_date: '1980-05-22'
   title: The Shining
 - genres:
+  - Documentary
+  - History
+  id: 549559
+  release_date: '2019-03-01'
+  title: Apollo 11
+- genres:
   - Mystery
   - Adventure
   - Crime
   id: 328387
   release_date: '2016-07-27'
   title: Nerve
+- genres:
+  - Drama
+  - Mystery
+  - Thriller
+  id: 340676
+  release_date: '2016-10-19'
+  title: Personal Shopper
 - genres:
   - Adventure
   - Action
@@ -2229,12 +2292,11 @@
   release_date: '1989-08-09'
   title: The Abyss
 - genres:
-  - Action
-  - Thriller
-  - Crime
-  id: 8909
-  release_date: '2008-06-19'
-  title: Wanted
+  - Drama
+  - Science Fiction
+  id: 334538
+  release_date: '2016-06-03'
+  title: Into the Forest
 - genres:
   - Animation
   - Family
@@ -2242,21 +2304,28 @@
   release_date: '1985-07-24'
   title: The Black Cauldron
 - genres:
-  - Comedy
-  id: 76493
-  release_date: '2012-05-15'
-  title: The Dictator
-- genres:
-  - Drama
-  id: 334543
-  release_date: '2016-11-24'
-  title: Lion
+  - Action
+  - Thriller
+  - Crime
+  id: 8909
+  release_date: '2008-06-19'
+  title: Wanted
 - genres:
   - Horror
   - Thriller
   id: 250574
   release_date: '2014-06-23'
   title: Creep
+- genres:
+  - Drama
+  id: 334541
+  release_date: '2016-11-18'
+  title: Manchester by the Sea
+- genres:
+  - Drama
+  id: 334543
+  release_date: '2016-11-24'
+  title: Lion
 - genres:
   - Action
   - Science Fiction
@@ -2271,10 +2340,10 @@
   release_date: '2001-08-10'
   title: American Pie 2
 - genres:
-  - Drama
-  id: 334541
-  release_date: '2016-11-18'
-  title: Manchester by the Sea
+  - Comedy
+  id: 76493
+  release_date: '2012-05-15'
+  title: The Dictator
 - genres:
   - Drama
   id: 414425
@@ -2330,7 +2399,6 @@
 - genres:
   - Thriller
   - Mystery
-  - Drama
   id: 328425
   release_date: '2015-07-30'
   title: The Gift
@@ -2339,6 +2407,13 @@
   id: 326382
   release_date: '2017-09-08'
   title: Zama
+- genres:
+  - Action
+  - Thriller
+  - Fantasy
+  id: 752
+  release_date: '2006-03-15'
+  title: V for Vendetta
 - genres:
   - Action
   - Crime
@@ -2425,12 +2500,11 @@
   release_date: '1992-11-19'
   title: 'Home Alone 2: Lost in New York'
 - genres:
-  - Drama
   - Comedy
-  - Romance
-  id: 82693
-  release_date: '2012-09-08'
-  title: Silver Linings Playbook
+  - Drama
+  id: 41733
+  release_date: '2010-11-04'
+  title: Due Date
 - genres:
   - Fantasy
   - Drama
@@ -2439,11 +2513,12 @@
   release_date: '2008-11-20'
   title: Twilight
 - genres:
-  - Comedy
   - Drama
-  id: 41733
-  release_date: '2010-11-04'
-  title: Due Date
+  - Comedy
+  - Romance
+  id: 82693
+  release_date: '2012-09-08'
+  title: Silver Linings Playbook
 - genres:
   - Adventure
   - Action
@@ -2491,12 +2566,11 @@
   release_date: '2012-10-14'
   title: Would You Rather
 - genres:
-  - Action
-  - Adventure
-  - Comedy
-  id: 293660
-  release_date: '2016-02-09'
-  title: Deadpool
+  - Romance
+  - Drama
+  id: 11036
+  release_date: '2004-06-25'
+  title: The Notebook
 - genres:
   - History
   - Drama
@@ -2506,11 +2580,12 @@
   release_date: '2014-11-14'
   title: The Imitation Game
 - genres:
-  - Romance
-  - Drama
-  id: 11036
-  release_date: '2004-06-25'
-  title: The Notebook
+  - Action
+  - Adventure
+  - Comedy
+  id: 293660
+  release_date: '2016-02-09'
+  title: Deadpool
 - genres:
   - Drama
   - Mystery
@@ -2562,7 +2637,6 @@
 - genres:
   - Animation
   - Family
-  - Comedy
   - Adventure
   - Fantasy
   - Romance
@@ -2571,22 +2645,15 @@
   title: Aladdin
 - genres:
   - Comedy
-  id: 813
-  release_date: '1980-07-02'
-  title: Airplane!
-- genres:
-  - Comedy
   - Romance
   id: 6957
   release_date: '2005-08-11'
   title: The 40 Year Old Virgin
 - genres:
-  - War
-  - Drama
-  - Action
-  id: 228150
-  release_date: '2014-10-15'
-  title: Fury
+  - Comedy
+  id: 813
+  release_date: '1980-07-02'
+  title: Airplane!
 - genres:
   - Thriller
   - Science Fiction
@@ -2594,6 +2661,13 @@
   id: 37686
   release_date: '2011-06-08'
   title: Super 8
+- genres:
+  - War
+  - Drama
+  - Action
+  id: 228150
+  release_date: '2014-10-15'
+  title: Fury
 - genres:
   - Drama
   - Romance
@@ -2623,11 +2697,12 @@
   release_date: '2015-07-17'
   title: The Stanford Prison Experiment
 - genres:
-  - Comedy
-  - Horror
-  id: 13121
-  release_date: '2008-01-18'
-  title: Teeth
+  - Crime
+  - Drama
+  - Thriller
+  id: 6977
+  release_date: '2007-11-08'
+  title: No Country for Old Men
 - genres:
   - Fantasy
   - Action
@@ -2637,12 +2712,11 @@
   release_date: '2006-01-12'
   title: 'Underworld: Evolution'
 - genres:
-  - Crime
-  - Drama
-  - Thriller
-  id: 6977
-  release_date: '2007-11-08'
-  title: No Country for Old Men
+  - Comedy
+  - Horror
+  id: 13121
+  release_date: '2008-01-18'
+  title: Teeth
 - genres:
   - Drama
   - Horror
@@ -2651,12 +2725,6 @@
   release_date: '2008-02-01'
   title: The Eye
 - genres:
-  - Comedy
-  - Drama
-  id: 9032
-  release_date: '1999-06-25'
-  title: Big Daddy
-- genres:
   - Science Fiction
   - Drama
   id: 840
@@ -2664,10 +2732,24 @@
   title: Close Encounters of the Third Kind
 - genres:
   - Comedy
+  - Drama
+  id: 9032
+  release_date: '1999-06-25'
+  title: Big Daddy
+- genres:
+  - Comedy
   - Romance
   id: 9038
   release_date: '2007-10-05'
   title: The Heartbreak Kid
+- genres:
+  - Crime
+  - Drama
+  - Thriller
+  - Western
+  id: 338766
+  release_date: '2016-08-12'
+  title: Hell or High Water
 - genres:
   - Comedy
   - Drama
@@ -2787,9 +2869,7 @@
   release_date: '2010-09-16'
   title: Easy A
 - genres:
-  - Drama
   - Thriller
-  - Crime
   id: 398181
   release_date: '2017-11-08'
   title: You Were Never Really Here
@@ -2826,6 +2906,12 @@
   release_date: '1995-07-19'
   title: 'Free Willy 2: The Adventure Home'
 - genres:
+  - Mystery
+  - Horror
+  id: 310131
+  release_date: '2016-02-19'
+  title: The Witch
+- genres:
   - Horror
   id: 109428
   release_date: '2013-04-05'
@@ -2848,17 +2934,17 @@
   release_date: '2011-10-19'
   title: Paranormal Activity 3
 - genres:
-  - Action
-  - Mystery
-  - Science Fiction
-  id: 13183
-  release_date: '2009-03-05'
-  title: Watchmen
-- genres:
   - Comedy
   id: 109439
   release_date: '2013-05-23'
   title: The Hangover Part III
+- genres:
+  - Mystery
+  - Fantasy
+  - Science Fiction
+  id: 13183
+  release_date: '2009-03-05'
+  title: Watchmen
 - genres:
   - Comedy
   id: 109443
@@ -2974,6 +3060,46 @@
   release_date: '2005-05-25'
   title: Madagascar
 - genres:
+  - Adventure
+  - Action
+  - Thriller
+  id: 954
+  release_date: '1996-05-22'
+  title: 'Mission: Impossible'
+- genres:
+  - Adventure
+  - Action
+  - Thriller
+  id: 955
+  release_date: '2000-05-24'
+  title: 'Mission: Impossible II'
+- genres:
+  - Adventure
+  - Action
+  - Thriller
+  id: 956
+  release_date: '2006-05-03'
+  title: 'Mission: Impossible III'
+- genres:
+  - Comedy
+  - Science Fiction
+  id: 957
+  release_date: '1987-06-24'
+  title: Spaceballs
+- genres:
+  - Action
+  - Comedy
+  id: 267193
+  release_date: '2016-02-24'
+  title: Grimsby
+- genres:
+  - Adventure
+  - Comedy
+  - Drama
+  id: 371645
+  release_date: '2016-03-31'
+  title: Hunt for the Wilderpeople
+- genres:
   - Thriller
   - Adventure
   - Action
@@ -2989,62 +3115,22 @@
   title: The American
 - genres:
   - Action
-  - Crime
-  id: 23483
-  release_date: '2010-03-22'
-  title: Kick-Ass
-- genres:
-  - Comedy
-  - Science Fiction
-  id: 957
-  release_date: '1987-06-24'
-  title: Spaceballs
-- genres:
-  - Action
   - Comedy
   - Crime
   id: 27581
   release_date: '2010-08-06'
   title: The Other Guys
 - genres:
-  - Adventure
-  - Comedy
-  - Drama
-  id: 371645
-  release_date: '2016-03-31'
-  title: Hunt for the Wilderpeople
-- genres:
-  - Action
-  - Comedy
-  id: 267193
-  release_date: '2016-02-24'
-  title: Grimsby
-- genres:
-  - Adventure
-  - Action
-  - Thriller
-  id: 955
-  release_date: '2000-05-24'
-  title: 'Mission: Impossible II'
-- genres:
-  - Adventure
-  - Action
-  - Thriller
-  id: 954
-  release_date: '1996-05-22'
-  title: 'Mission: Impossible'
-- genres:
   - Thriller
   id: 474051
   release_date: '2018-06-22'
   title: Calibre
 - genres:
-  - Adventure
   - Action
-  - Thriller
-  id: 956
-  release_date: '2006-05-03'
-  title: 'Mission: Impossible III'
+  - Crime
+  id: 23483
+  release_date: '2010-03-22'
+  title: Kick-Ass
 - genres:
   - Thriller
   - Action
@@ -3076,7 +3162,7 @@
 - genres:
   - Documentary
   id: 515042
-  release_date: '2018-12-14'
+  release_date: '2018-10-12'
   title: Free Solo
 - genres:
   - Action
@@ -3163,25 +3249,18 @@
   release_date: '2017-07-26'
   title: Atomic Blonde
 - genres:
-  - Action
-  - Thriller
-  - Science Fiction
-  id: 7191
-  release_date: '2008-01-15'
-  title: Cloverfield
-- genres:
   - Science Fiction
   - Drama
   id: 17431
   release_date: '2009-06-12'
   title: Moon
 - genres:
-  - Romance
+  - Action
+  - Thriller
   - Science Fiction
-  - Drama
-  id: 152601
-  release_date: '2013-12-18'
-  title: Her
+  id: 7191
+  release_date: '2008-01-15'
+  title: Cloverfield
 - genres:
   - Drama
   - Thriller
@@ -3197,6 +3276,19 @@
   release_date: '2015-08-13'
   title: The Man from U.N.C.L.E.
 - genres:
+  - Romance
+  - Science Fiction
+  - Drama
+  id: 152601
+  release_date: '2013-12-18'
+  title: Her
+- genres:
+  - Comedy
+  - Drama
+  id: 156700
+  release_date: '2013-01-19'
+  title: The Kings of Summer
+- genres:
   - Comedy
   - Crime
   - Drama
@@ -3205,6 +3297,7 @@
   title: War Dogs
 - genres:
   - Drama
+  - Music
   id: 244786
   release_date: '2014-10-10'
   title: Whiplash
@@ -3266,6 +3359,12 @@
   id: 257091
   release_date: '2015-03-26'
   title: Get Hard
+- genres:
+  - Horror
+  - Mystery
+  id: 9286
+  release_date: '2006-02-09'
+  title: Final Destination 3
 - genres:
   - Comedy
   - Drama
@@ -3438,6 +3537,13 @@
   release_date: '2006-09-08'
   title: Babel
 - genres:
+  - Drama
+  - History
+  - Comedy
+  id: 429197
+  release_date: '2018-12-25'
+  title: Vice
+- genres:
   - Documentary
   - Comedy
   - Drama
@@ -3487,12 +3593,11 @@
   title: There Will Be Blood
 - genres:
   - Drama
-  - Action
-  - Thriller
-  - Crime
-  id: 64690
-  release_date: '2011-08-06'
-  title: Drive
+  - History
+  - War
+  id: 324786
+  release_date: '2016-10-07'
+  title: Hacksaw Ridge
 - genres:
   - Action
   - Comedy
@@ -3502,11 +3607,12 @@
   title: 21 Jump Street
 - genres:
   - Drama
-  - History
-  - War
-  id: 324786
-  release_date: '2016-10-07'
-  title: Hacksaw Ridge
+  - Action
+  - Thriller
+  - Crime
+  id: 64690
+  release_date: '2011-08-06'
+  title: Drive
 - genres:
   - Comedy
   id: 9398
@@ -3530,18 +3636,18 @@
   release_date: '2005-06-22'
   title: Herbie Fully Loaded
 - genres:
+  - Comedy
+  - Drama
+  id: 11453
+  release_date: '2005-08-12'
+  title: 'Deuce Bigalow: European Gigolo'
+- genres:
   - Thriller
   - Crime
   - Drama
   id: 1213
   release_date: '1999-12-25'
   title: The Talented Mr. Ripley
-- genres:
-  - Comedy
-  - Drama
-  id: 11453
-  release_date: '2005-08-12'
-  title: 'Deuce Bigalow: European Gigolo'
 - genres:
   - Adventure
   - Comedy
@@ -3611,7 +3717,6 @@
 - genres:
   - Action
   - Drama
-  - Thriller
   - War
   id: 193756
   release_date: '2013-12-24'
@@ -3753,11 +3858,13 @@
   - Horror
   - Mystery
   id: 23827
-  release_date: '2007-09-14'
+  release_date: '2009-09-25'
   title: Paranormal Activity
 - genres:
   - Action
   - Comedy
+  - Adventure
+  - War
   id: 7446
   release_date: '2008-08-09'
   title: Tropic Thunder
@@ -3795,6 +3902,11 @@
   title: Anger Management
 - genres:
   - Comedy
+  id: 288036
+  release_date: '2015-06-26'
+  title: Sleeping with Other People
+- genres:
+  - Comedy
   - Romance
   id: 9522
   release_date: '2005-07-13'
@@ -3812,6 +3924,11 @@
   id: 316727
   release_date: '2016-06-29'
   title: 'The Purge: Election Year'
+- genres:
+  - Horror
+  id: 9532
+  release_date: '2000-03-17'
+  title: Final Destination
 - genres:
   - Action
   - Drama
@@ -3832,7 +3949,6 @@
 - genres:
   - Drama
   - History
-  - Romance
   - Crime
   - Thriller
   id: 302401
@@ -3909,12 +4025,12 @@
   release_date: '2006-12-07'
   title: Blood Diamond
 - genres:
-  - Thriller
-  - Drama
-  - History
-  id: 97630
-  release_date: '2012-12-19'
-  title: Zero Dark Thirty
+  - Comedy
+  - Animation
+  - Family
+  id: 7518
+  release_date: '2006-05-17'
+  title: Over the Hedge
 - genres:
   - Action
   - Drama
@@ -3930,12 +4046,12 @@
   release_date: '1988-07-29'
   title: Cocktail
 - genres:
-  - Comedy
-  - Animation
-  - Family
-  id: 7518
-  release_date: '2006-05-17'
-  title: Over the Hedge
+  - Thriller
+  - Drama
+  - History
+  id: 97630
+  release_date: '2012-12-19'
+  title: Zero Dark Thirty
 - genres:
   - Comedy
   - Drama
@@ -3946,7 +4062,6 @@
   - Western
   - Drama
   - Adventure
-  - Thriller
   id: 281957
   release_date: '2015-12-25'
   title: The Revenant
@@ -4017,18 +4132,17 @@
   release_date: '1988-06-29'
   title: Coming to America
 - genres:
+  - Comedy
+  - Romance
+  id: 9603
+  release_date: '1995-07-19'
+  title: Clueless
+- genres:
   - Action
   - Thriller
   id: 7555
   release_date: '2008-01-24'
   title: Rambo
-- genres:
-  - Comedy
-  - Drama
-  - Romance
-  id: 9603
-  release_date: '1995-07-19'
-  title: Clueless
 - genres:
   - Fantasy
   - Drama
@@ -4066,11 +4180,6 @@
   release_date: '2008-06-19'
   title: Get Smart
 - genres:
-  - Comedy
-  id: 89492
-  release_date: '2012-12-20'
-  title: This Is 40
-- genres:
   - Action
   - Adventure
   - Fantasy
@@ -4078,6 +4187,11 @@
   id: 284052
   release_date: '2016-10-25'
   title: Doctor Strange
+- genres:
+  - Comedy
+  id: 89492
+  release_date: '2012-12-20'
+  title: This Is 40
 - genres:
   - Action
   - Adventure
@@ -4124,6 +4238,15 @@
   title: The Italian Job
 - genres:
   - Action
+  - Horror
+  - Mystery
+  - Science Fiction
+  - Thriller
+  id: 19898
+  release_date: '2009-09-08'
+  title: Pandorum
+- genres:
+  - Action
   - Thriller
   - Science Fiction
   - Adventure
@@ -4149,14 +4272,19 @@
   release_date: '2009-10-07'
   title: Zombieland
 - genres:
-  - Romance
+  - Horror
+  - Mystery
+  id: 19912
+  release_date: '2009-08-26'
+  title: The Final Destination
+- genres:
   - Comedy
   - Drama
-  id: 138697
-  release_date: '2013-07-26'
-  title: Don Jon
+  - Romance
+  id: 19913
+  release_date: '2009-07-17'
+  title: (500) Days of Summer
 - genres:
-  - Action
   - Comedy
   - Crime
   - Mystery
@@ -4170,22 +4298,17 @@
   release_date: '2017-06-28'
   title: Baby Driver
 - genres:
+  - Romance
   - Comedy
   - Drama
-  - Romance
-  id: 19913
-  release_date: '2009-07-17'
-  title: (500) Days of Summer
+  id: 138697
+  release_date: '2013-07-26'
+  title: Don Jon
 - genres:
   - Drama
   id: 339405
   release_date: '2016-10-14'
   title: Christine
-- genres:
-  - Drama
-  id: 87502
-  release_date: '2012-11-02'
-  title: Flight
 - genres:
   - Science Fiction
   - Thriller
@@ -4193,6 +4316,11 @@
   id: 406990
   release_date: '2017-08-18'
   title: What Happened to Monday
+- genres:
+  - Drama
+  id: 87502
+  release_date: '2012-11-02'
+  title: Flight
 - genres:
   - Comedy
   - History
@@ -4263,14 +4391,6 @@
   release_date: '2007-07-12'
   title: I Now Pronounce You Chuck & Larry
 - genres:
-  - Action
-  - Crime
-  - Drama
-  - Thriller
-  id: 13804
-  release_date: '2009-04-02'
-  title: Fast & Furious
-- genres:
   - Mystery
   - Thriller
   - Horror
@@ -4278,6 +4398,14 @@
   id: 9708
   release_date: '2006-09-01'
   title: The Wicker Man
+- genres:
+  - Action
+  - Crime
+  - Drama
+  - Thriller
+  id: 13804
+  release_date: '2009-04-02'
+  title: Fast & Furious
 - genres:
   - Action
   - Crime
@@ -4308,11 +4436,10 @@
   - Drama
   - Thriller
   id: 13825
-  release_date: '2010-02-04'
+  release_date: '2008-10-24'
   title: The Lazarus Project
 - genres:
   - Comedy
-  - Crime
   id: 1542
   release_date: '1999-02-19'
   title: Office Space
@@ -4350,13 +4477,6 @@
   release_date: '2007-08-29'
   title: Balls of Fury
 - genres:
-  - Horror
-  - Thriller
-  - Science Fiction
-  id: 1562
-  release_date: '2007-04-26'
-  title: 28 Weeks Later
-- genres:
   - Comedy
   - Horror
   id: 19994
@@ -4370,6 +4490,13 @@
   id: 19995
   release_date: '2009-12-10'
   title: Avatar
+- genres:
+  - Horror
+  - Thriller
+  - Science Fiction
+  id: 1562
+  release_date: '2007-04-26'
+  title: 28 Weeks Later
 - genres:
   - Adventure
   - Science Fiction
@@ -4440,16 +4567,23 @@
   release_date: '2005-06-01'
   title: The Sisterhood of the Traveling Pants
 - genres:
-  - Science Fiction
-  - Fantasy
   - Action
   - Adventure
-  - War
+  - Science Fiction
   id: 181812
   release_date: '2019-12-18'
-  title: 'Star Wars: Episode IX'
+  title: 'Star Wars: The Rise of Skywalker'
+- genres:
+  - Crime
+  - Drama
+  - Mystery
+  - Thriller
+  id: 1592
+  release_date: '1996-04-03'
+  title: Primal Fear
 - genres:
   - Drama
+  - Action
   id: 9787
   release_date: '2005-06-03'
   title: Lords of Dogtown
@@ -4538,9 +4672,7 @@
   title: The Conjuring
 - genres:
   - Comedy
-  - Drama
   - Family
-  - Romance
   id: 9820
   release_date: '1998-07-28'
   title: The Parent Trap
@@ -4569,7 +4701,7 @@
 - genres:
   - Drama
   id: 1640
-  release_date: '2005-05-06'
+  release_date: '2004-09-10'
   title: Crash
 - genres:
   - Drama
@@ -4608,12 +4740,12 @@
   release_date: '2008-04-17'
   title: Forgetting Sarah Marshall
 - genres:
-  - Crime
   - Drama
+  - Horror
   - Thriller
-  id: 38542
-  release_date: '2009-09-12'
-  title: The Disappearance of Alice Creed
+  id: 284303
+  release_date: '2014-08-29'
+  title: Goodnight Mommy
 - genres:
   - Horror
   id: 433808
@@ -4627,12 +4759,12 @@
   release_date: '2014-10-01'
   title: Gone Girl
 - genres:
+  - Crime
   - Drama
-  - Horror
   - Thriller
-  id: 284303
-  release_date: '2014-08-29'
-  title: Goodnight Mommy
+  id: 38542
+  release_date: '2009-09-12'
+  title: The Disappearance of Alice Creed
 - genres:
   - Comedy
   - Drama
@@ -4687,13 +4819,13 @@
   release_date: '2016-09-14'
   title: The Magnificent Seven
 - genres:
-  - Action
-  - Adventure
   - Drama
-  - Family
-  id: 38575
-  release_date: '2010-06-10'
-  title: The Karate Kid
+  - Thriller
+  - Horror
+  - Adventure
+  id: 403119
+  release_date: '2017-05-25'
+  title: 47 Meters Down
 - genres:
   - Adventure
   - Horror
@@ -4702,13 +4834,13 @@
   release_date: '2009-10-14'
   title: 'The Descent: Part 2'
 - genres:
-  - Drama
-  - Thriller
-  - Horror
+  - Action
   - Adventure
-  id: 403119
-  release_date: '2017-05-25'
-  title: 47 Meters Down
+  - Drama
+  - Family
+  id: 38575
+  release_date: '2010-06-10'
+  title: The Karate Kid
 - genres:
   - Drama
   - Horror
@@ -4906,17 +5038,9 @@
   - Family
   - Animation
   - Fantasy
-  - Music
   id: 10020
   release_date: '1991-11-13'
   title: Beauty and the Beast
-- genres:
-  - Crime
-  - Drama
-  - Thriller
-  id: 1830
-  release_date: '2005-09-16'
-  title: Lord of War
 - genres:
   - Action
   - Comedy
@@ -4926,6 +5050,13 @@
   id: 10022
   release_date: '2005-03-04'
   title: The Pacifier
+- genres:
+  - Crime
+  - Drama
+  - Thriller
+  id: 1830
+  release_date: '2005-09-16'
+  title: Lord of War
 - genres:
   - Horror
   - Action
@@ -4995,17 +5126,18 @@
   title: Spy Kids
 - genres:
   - Adventure
-  - Fantasy
-  id: 57158
-  release_date: '2013-12-11'
-  title: 'The Hobbit: The Desolation of Smaug'
-- genres:
-  - Adventure
   - Comedy
   - Animation
   id: 399174
   release_date: '2018-03-23'
   title: Isle of Dogs
+- genres:
+  - Adventure
+  - Fantasy
+  - Action
+  id: 57158
+  release_date: '2013-12-11'
+  title: 'The Hobbit: The Desolation of Smaug'
 - genres:
   - Fantasy
   - Adventure
@@ -5068,6 +5200,17 @@
   release_date: '1992-11-18'
   title: Malcolm X
 - genres:
+  - Comedy
+  - Romance
+  id: 48988
+  release_date: '2011-02-25'
+  title: Hall Pass
+- genres:
+  - Drama
+  id: 1885
+  release_date: '1984-06-22'
+  title: The Karate Kid
+- genres:
   - Action
   - Science Fiction
   - Adventure
@@ -5075,17 +5218,6 @@
   id: 75612
   release_date: '2013-04-10'
   title: Oblivion
-- genres:
-  - Drama
-  id: 1885
-  release_date: '1984-06-22'
-  title: The Karate Kid
-- genres:
-  - Comedy
-  - Romance
-  id: 48988
-  release_date: '2011-02-25'
-  title: Hall Pass
 - genres:
   - Drama
   id: 470880
@@ -5105,6 +5237,11 @@
   id: 1892
   release_date: '1983-05-23'
   title: Return of the Jedi
+- genres:
+  - Comedy
+  id: 12133
+  release_date: '2008-07-25'
+  title: Step Brothers
 - genres:
   - Adventure
   - Action
@@ -5127,22 +5264,17 @@
   release_date: '2005-05-17'
   title: 'Star Wars: Episode III - Revenge of the Sith'
 - genres:
-  - Comedy
-  id: 12133
-  release_date: '2008-02-05'
-  title: Step Brothers
+  - Animation
+  - Family
+  id: 38757
+  release_date: '2010-02-03'
+  title: Tangled
 - genres:
   - Comedy
   - Drama
   id: 40807
   release_date: '2011-09-30'
   title: 50/50
-- genres:
-  - Animation
-  - Family
-  id: 38757
-  release_date: '2010-02-03'
-  title: Tangled
 - genres:
   - Horror
   id: 157547
@@ -5163,20 +5295,19 @@
   release_date: '2004-04-13'
   title: 13 Going on 30
 - genres:
+  - Drama
+  - Adventure
+  - History
+  id: 49009
+  release_date: '2010-09-03'
+  title: The Way Back
+- genres:
   - Action
   - Adventure
   - Western
   id: 57201
   release_date: '2013-07-03'
   title: The Lone Ranger
-- genres:
-  - Adventure
-  - Action
-  - Thriller
-  - Science Fiction
-  id: 44912
-  release_date: '2011-06-16'
-  title: Green Lantern
 - genres:
   - Drama
   - Adventure
@@ -5186,12 +5317,13 @@
   release_date: '2000-02-11'
   title: The Beach
 - genres:
-  - Drama
   - Adventure
-  - History
-  id: 49009
-  release_date: '2010-09-03'
-  title: The Way Back
+  - Action
+  - Thriller
+  - Science Fiction
+  id: 44912
+  release_date: '2011-06-16'
+  title: Green Lantern
 - genres:
   - Animation
   - Family
@@ -5214,11 +5346,23 @@
   release_date: '2010-09-13'
   title: Insidious
 - genres:
+  - Action
+  - Crime
+  - Thriller
+  id: 180299
+  release_date: '2014-03-27'
+  title: The Raid 2
+- genres:
   - Comedy
   - Crime
   id: 57214
   release_date: '2012-03-01'
   title: Project X
+- genres:
+  - Comedy
+  id: 71552
+  release_date: '2012-04-04'
+  title: American Reunion
 - genres:
   - Animation
   - Family
@@ -5228,10 +5372,17 @@
   title: Despicable Me
 - genres:
   - Drama
-  - Crime
-  id: 8065
-  release_date: '2008-03-27'
-  title: '21'
+  - Thriller
+  - War
+  id: 12162
+  release_date: '2008-10-10'
+  title: The Hurt Locker
+- genres:
+  - Drama
+  - Romance
+  id: 12163
+  release_date: '2008-09-07'
+  title: The Wrestler
 - genres:
   - Action
   - Crime
@@ -5242,15 +5393,10 @@
   title: The Dark Knight Rises
 - genres:
   - Drama
-  - Romance
-  id: 12163
-  release_date: '2008-09-07'
-  title: The Wrestler
-- genres:
-  - Comedy
-  id: 71552
-  release_date: '2012-04-04'
-  title: American Reunion
+  - Crime
+  id: 8065
+  release_date: '2008-03-27'
+  title: '21'
 - genres:
   - Crime
   - Drama
@@ -5258,13 +5404,6 @@
   id: 85889
   release_date: '2013-09-23'
   title: Filth
-- genres:
-  - Drama
-  - Thriller
-  - War
-  id: 12162
-  release_date: '2008-10-10'
-  title: The Hurt Locker
 - genres:
   - Drama
   - Action
@@ -5335,17 +5474,17 @@
   release_date: '2004-10-10'
   title: 'Team America: World Police'
 - genres:
-  - Drama
-  id: 389015
-  release_date: '2017-12-08'
-  title: I, Tonya
-- genres:
   - Science Fiction
   - Thriller
   - Drama
   id: 49047
   release_date: '2013-10-03'
   title: Gravity
+- genres:
+  - Drama
+  id: 389015
+  release_date: '2017-12-08'
+  title: I, Tonya
 - genres:
   - Animation
   - Fantasy
@@ -5362,11 +5501,12 @@
   release_date: '2010-04-28'
   title: Iron Man 2
 - genres:
-  - Mystery
-  - Thriller
-  id: 8090
-  release_date: '2008-01-22'
-  title: Untraceable
+  - Adventure
+  - Fantasy
+  - Action
+  id: 49051
+  release_date: '2012-11-26'
+  title: 'The Hobbit: An Unexpected Journey'
 - genres:
   - Crime
   - Drama
@@ -5385,12 +5525,11 @@
   release_date: '2007-03-02'
   title: Zodiac
 - genres:
-  - Adventure
-  - Fantasy
-  - Action
-  id: 49051
-  release_date: '2012-11-26'
-  title: 'The Hobbit: An Unexpected Journey'
+  - Mystery
+  - Thriller
+  id: 8090
+  release_date: '2008-01-22'
+  title: Untraceable
 - genres:
   - Science Fiction
   - Thriller
@@ -5419,6 +5558,14 @@
   title: White Men Can't Jump
 - genres:
   - Drama
+  - Horror
+  - Mystery
+  - Thriller
+  id: 14254
+  release_date: '2009-01-30'
+  title: The Uninvited
+- genres:
+  - Drama
   id: 10161
   release_date: '1989-07-21'
   title: 'My Left Foot: The Story of Christy Brown'
@@ -5431,11 +5578,9 @@
   release_date: '2007-06-13'
   title: 'Fantastic Four: Rise of the Silver Surfer'
 - genres:
+  - War
   - Action
   - Drama
-  - History
-  - Thriller
-  - War
   id: 374720
   release_date: '2017-07-19'
   title: Dunkirk
@@ -5496,6 +5641,12 @@
   release_date: '2008-12-25'
   title: Marley & Me
 - genres:
+  - Thriller
+  - Horror
+  id: 458723
+  release_date: '2019-03-14'
+  title: Us
+- genres:
   - Comedy
   - Romance
   id: 2022
@@ -5516,3 +5667,11 @@
   id: 354287
   release_date: '2017-05-26'
   title: War Machine
+- genres:
+  - Drama
+  - Thriller
+  - Adventure
+  - Horror
+  id: 425972
+  release_date: '2017-10-06'
+  title: Cargo

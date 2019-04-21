@@ -9,24 +9,24 @@ redirect_from: 2017/05/13/cryptopals-challenge-set-2.html
 
 This is the second installment of a mini-series where I walk through the [Cryptopals Challenges](http://cryptopals.com/). This challenge focuses on [block cipher cryptography](https://en.wikipedia.org/wiki/Block_cipher). I suggest reading previous walk-through posts before reading this one.
 
-#### Cryptopals Sets: ####
-- [Set 1: Basics]({% post_url 2017-04-20-cryptopals-challenge-set-1 %})
-- [Set 2: Block crypto]({% post_url 2017-05-13-cryptopals-challenge-set-2%}) &nbsp;&nbsp;&nbsp;←
-- [Set 3: Block and stream crypto]({% post_url 2017-07-14-cryptopals-challenge-set-3%})
-- <span class="dead-link">Set 4: Stream crypto and randomness</span>
-- <span class="dead-link">Set 5: Diffie-Hellman and friends</span>
-- <span class="dead-link">Set 6: RSA and DSA</span>
-- <span class="dead-link">Set 7: Hashes </span>
-- <span class="dead-link">Set 8: Abstract Algebra</span>
+<h2>Cryptopals Sets:</h2>
+
+<ul class="nav">
+  <li><a href="{% post_url 2017-04-20-cryptopals-challenge-set-1 %}">Set 1: Basics</a></li>
+  <li><a href="{% post_url 2017-05-13-cryptopals-challenge-set-2%}">Set 2: Block crypto</a> &nbsp;&nbsp;&nbsp;←</li>
+  <li><a href="{% post_url 2017-07-14-cryptopals-challenge-set-3%}">Set 3: Block and stream crypto</a></li>
+  <li><span class="dead-link">Set 4: Stream crypto and randomness</span></li>
+  <li><span class="dead-link">Set 5: Diffie-Hellman and friends</span></li>
+  <li><span class="dead-link">Set 6: RSA and DSA</span></li>
+  <li><span class="dead-link">Set 7: Hashes </span></li>
+  <li><span class="dead-link">Set 8: Abstract Algebra</span></li>
+</ul>
 
 <b>Warning:</b> There are spoilers (solutions) below!
 
-<iframe class="youtube-video center-media" src="https://www.youtube.com/embed/zNJ8_Dh3Onk" frameborder="0" allowfullscreen></iframe>
-<p class="image-label">Another extremely relevant music video</p>
-
-<h3 id="9-implement-pkcs7-padding">
+<h2 id="9-implement-pkcs7-padding">
   9. Implement PKCS#7 padding
-</h3>
+</h2>
 
 Block ciphers work by encrypting single blocks of plaintext or decrypting single blocks of ciphertext. However, most messages we want to encrypt are irregularly sized and need to be padded to be a multiple the block size (usually 8 or 16 bytes).
 
@@ -50,7 +50,7 @@ pad_pkcs7(buffer, 20)
 # bytearray(b'YELLOW SUBMARINE\x04\x04\x04\x04')
 {% endhighlight %}
 
-#### Unpad PKCS#7 ####
+<h3>Unpad PKCS#7</h3>
 
 We're going to need an inverse function to "unpad" a potentially padded buffer later on, so let's just write one up now.
 
@@ -67,13 +67,13 @@ def unpad_pkcs7(buffer):
     return new_buffer
 {% endhighlight %}
 
-<h3 id="10-implement-cbc-mode">
+<h2 id="10-implement-cbc-mode">
   10. Implement CBC mode
-</h3>
+</h2>
 
 This exercise involves writing AES-128 functions to encrypt and decrypt in CBC mode by using the AES-128 in ECB mode as done in [exercise 7]({% post_url 2017-04-20-cryptopals-challenge-set-1 %}#7-aes-in-ecb-mode).
 
-#### Cipherblock Chaining (CBC) mode ####
+<h3>Cipherblock Chaining (CBC) mode</h3>
 
 In [CBC mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Block_Chaining_.28CBC.29), each plaintext block is XOR'd with the previous ciphertext block before being encrypted, essentially chaining the cipherblocks together. The first block is XOR'd with an initialization vector (IV) before being encrypted and the IV is usually considered public knowledge.
 
@@ -123,7 +123,7 @@ assert aes_128_cbc_dec(aes_128_cbc_enc(plaintext, key, iv), key, iv) == plaintex
 # Assertion passes - encryption and decryption are correct
 {% endhighlight %}
 
-#### Decrypting the ciphertext ####
+<h3>Decrypting the ciphertext</h3>
 
 Ok, let's use the `aes_123_cbc_dec` defined above to decrypt the ciphertext given in this exercise.
 
@@ -142,15 +142,15 @@ aes_128_cbc_dec(ciphertext, key, iv)
 # ...
 {% endhighlight %}
 
-<h3 id="11-an-ecb-cbc-detection-oracle">
+<h2 id="11-an-ecb-cbc-detection-oracle">
   11. An ECB/CBC detection oracle
-</h3>
+</h2>
 
 In this exercise, we are asked to write an function to randomly encrypt a buffer with AES-128 in either ECB or CBC mode and with a random 128 bit key, and then to write an oracle that determines if a ciphertext was encrypted using ECB or CBC mode.
 
 Let's go step by step.
 
-#### Generating a random key ####
+<h3>Generating a random key</h3>
 
 I just used Python's `random` module to create `N` random bytes where `N` is the length of the key in bytes. However, this is almost certainly not a secure way to generate keys randomly...
 
@@ -167,7 +167,7 @@ print repr(random_key(16))
 # bytearray(b'\xe0L\xa7\xb3Z\xd6\xc0e\x87vc\xc4*\x96,\x14')
 {% endhighlight %}
 
-#### Encrypting data under an unknown key ####
+<h3>Encrypting data under an unknown key</h3>
 
 The next step is to write a function that encrypts a string. The exercise gives an exact specification of what the function should do, so let's write it down:
 
@@ -202,7 +202,7 @@ encryption_oracle(bytearray("My name is Michael"))
 
 <b>Note:</b> Although not in the original specification, I decided to return a tuple containing the ciphertext and a bit representing the mode in which the plaintext was encrypted. This will help testing in the next step.
 
-#### Detect the block cipher mode ####
+<h3>Detect the block cipher mode</h3>
 
 To determine if a ciphertext was encrypted in ECB or CBC mode, I used the `repeated_blocks` function we wrote in [exercise 8]({% post_url 2017-04-20-cryptopals-challenge-set-1 %}#8-detect-aes-in-ecb-mode). If a ciphertext has repeated blocks, I assumed it was encrypted in ECB mode. In order to test this heuristic, I ran the encryption oracle a thousand times and ensured I detected the correct mode every time.
 
@@ -226,15 +226,15 @@ print "Detection works"
 
 <b>Note:</b> I provided the lyrics to [Rappers Delight](http://www.metrolyrics.com/rappers-delight-lyrics-sugarhill-gang.html) as the plaintext to be encrypted in the file `11.txt`.
 
-<h3 id="12-byte-at-a-time-ecb-decryption">
+<h2 id="12-byte-at-a-time-ecb-decryption">
   12. Byte-at-a-time ECB decryption (Simple)
-</h3>
+</h2>
 
 Obviously these challenges aren't meant to be easy, but I think the walkthrough for this question is slightly underspecified. Then again, this is the first attack that will break real crypto...
 
 In this exercise, we break AES-128 encryption in ECB mode! We can do this with a specially crafted attack that works if we can control the first `N` bytes of the plaintext.
 
-#### Encryption oracle 2.0 ####
+<h3>Encryption oracle 2.0</h3>
 
 Unlike the first from the [previous exercise](#11-an-ecb-cbc-detection-oracle), the new `encryption_oracle` function that should not add 5-10 random bytes to the start and end of the plaintext. I was momentarily confused by this.
 
@@ -257,7 +257,7 @@ def encryption_oracle(data):
     return aes_128_ecb_enc(plaintext, key)
 {% endhighlight %}
 
-#### Detect the block size ####
+<h3>Detect the block size</h3>
 
 This part of the exercise stumped for few moments. At first, I thought about reusing the same code to determine the block size from [exercise 6]({% post_url 2017-04-20-cryptopals-challenge-set-1 %}#6-breaking-repeating-key-xor). However, this felt like cheating since we could only do this previously by assuming that the ciphertext was encrypted in ECB mode and in this exercise, we can't assume that (yet).
 
@@ -276,13 +276,13 @@ def get_block_size(oracle):
         i += 1
 {% endhighlight %}
 
-#### Check if ECB mode  ####
+<h3>Check if ECB mode</h3>
 
 This attack (and exercise) is to decrypt a ciphertext encrypted in ECB mode. Needless to say, in order to carry out this attack, we must first know that the ciphertext was encrypted in ECB mode.
 
 We can use the `is_ecb_mode` function from the [previous exercise](#11-an-ecb-cbc-detection-oracle) but must make sure that the plaintext prefix (the part of the plaintext that we control) contains two identical blocks as the rest of the plaintext might not. I decided to use `"YELLOW SUBMARINEYELLOW SUBMARINE"` as the plaintext prefix as it's 32 bytes long (2 blocks) and both blocks are identical.
 
-#### Byte-by-byte decryption  ####
+<h3>Byte-by-byte decryption</h3>
 
 Now we can start looking at cracking the unknown string. As explained in the challenge description, we can do this by crafting special data to feed into the oracle and discovering the unknown string byte-by-byte.
 
@@ -302,7 +302,7 @@ I know what you're thinking. What happens when we "run out" of bytes to pass in 
 
 <b>Note:</b> The remaining bytes in the input don't have to be `"A"`. They just need to be the identical in both ciphertexts in order to compare the ciphertexts correctly.
 
-#### Detect the unknown string size ####
+<h3>Detect the unknown string size</h3>
 
 We can detect the length of the unknown string in almost the exact same way as we detected the block size.
 
@@ -318,7 +318,7 @@ def get_unknown_string_size(oracle):
         i += 1
 {% endhighlight %}
 
-#### Cracking the unknown string ####
+<h3>Cracking the unknown string</h3>
 
 The code below is a simplified version of the [original version](https://gist.github.com/mikeecb/f4847ffdec5a03445cd58344056c179d).
 
@@ -355,9 +355,9 @@ print get_unknown_string(encryption_oracle)
 # Did you stop? No, I just drove by
 {% endhighlight %}
 
-<h3 id="13-ecb-cut-and-paste">
+<h2 id="13-ecb-cut-and-paste">
   13. ECB cut-and-paste
-</h3>
+</h2>
 
 The goal of this exercise is to change the content of a ciphertext (produced using AES-128 in ECB mode) such that when it is decrypted, you have replaced some of the plaintext (that you were not in control of) with your own content.
 
@@ -384,7 +384,7 @@ def dec_profile(profile):
     return bytes(unpad_pkcs7(aes_128_ecb_dec(profile, key)))
 {% endhighlight %}
 
-#### Cutting-and-pasting ####
+<h3>Cutting-and-pasting</h3>
 
 The actual interesting part of this exercise is replacing `role=user` with `role=admin`. I did this in two steps.
 
@@ -433,9 +433,9 @@ create_admin_profile()
 
 <b>Note:</b> I computed everything in terms of a computed `block_size`, so this function should work if we were to, say, increase the block size to `32`. Also, although I set the email to `AAAAAAAAAAAAA`, the content is arbitrary as long as it is that length (13 bytes).
 
-<h3 id="14-byte-at-a-time-ecb-decryption-harder">
+<h2 id="14-byte-at-a-time-ecb-decryption-harder">
   14. Byte-at-a-time ECB decryption (Harder)
-</h3>
+</h2>
 
 This exercise is a rehash of [exercise 12](#12-byte-at-a-time-ecb-decryption) but instead of the encryption oracle encrypting `user_input || unknown_string`, the oracle encrypts `random_prefix || user_input || unknown_string`. The aim of this exercise is still to decrypt the `unknown_string` however the presence of the `random_prefix` makes it harder. I assume the `random_prefix` is constant (as the `unknown_string` is constant).
 
@@ -524,9 +524,9 @@ get_unknown_string(encryption_oracle)
 # Did you stop? No, I just drove by
 {% endhighlight %}
 
-<h3 id="15-pkcs7-padding-validation">
+<h2 id="15-pkcs7-padding-validation">
   15. PKCS#7 padding validation
-</h3>
+</h2>
 
 In this exercise, we are instructed to determine if a plaintext has a valid PKCS#7 padding. If it does, we should strip it off and if not, throw an exception. We can do this with minimal changes to the `unpad_pkcs7` function we wrote in [exercise 9](#9-implement-pkcs7-padding).
 
@@ -551,13 +551,13 @@ unpad_valid_pkcs7(bytearray("ICE ICE BABY\x04\x04\x04\x03"))
 # Exception: Bad PKCS#7 padding.
 {% endhighlight %}
 
-<h3 id="16-cbc-bitflipping-attacks">
+<h2 id="16-cbc-bitflipping-attacks">
   16. CBC bitflipping attacks
-</h3>
+</h2>
 
 This exercise involves cracking encryption in CBC mode! Essentially, we want to change some ciphertext, produced by an encryption oracle, such that a decryption oracle sees the string `";admin=true;"` is present in it's plaintext.
 
-#### Oracles ####
+<h3>Oracles</h3>
 
 The oracles are fairly simple to write so there's not much to say. The key thing is that the bytes `";"` and `"="` are escaped so we can't just pass `";admin=true;"` as the user input to the encryption oracle.
 
@@ -579,7 +579,7 @@ def is_admin(enc_data):
     return ";admin=true;" in plaintext
 {% endhighlight %}
 
-#### Flipping off the bits ####
+<h3>Flipping off the bits</h3>
 
 Since we XOR each decrypted block with the previous ciphertext block in CBC mode, we can change a byte in the plaintext by changing the byte at the same index in the previous block (though this completely corrupts the previous plaintext block!). We can use this to produce the unescaped characters `";"` and `"="` in the plaintext!
 
@@ -627,4 +627,6 @@ def crack():
 
 ### Fin ###
 
-Okay, wow. This set of exercises took me considerably longer than the [first set]({% post_url 2017-04-20-cryptopals-challenge-set-1%}) and the post ended up way too long. I’m going to think about splitting up the sets in half. Anyway, hope you enjoyed and found this post helpful! Still have time? Read through the [third set]({% post_url 2017-07-14-cryptopals-challenge-set-3%})!
+Okay, wow. This set of exercises took me considerably longer than the [first set]({% post_url 2017-04-20-cryptopals-challenge-set-1%}) and the post ended up way too long. I’m going to think about splitting up the sets in half. Anyway, hope you enjoyed and found this post helpful!
+
+Still have time to kill? Read through the [third set]({% post_url 2017-07-14-cryptopals-challenge-set-3%})!

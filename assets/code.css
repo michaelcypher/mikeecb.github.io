@@ -1,8 +1,7 @@
 .highlight {
   overflow: scroll;
-  margin: 0;
+  margin: 2em 0;
   padding: 1em;
-  font-size: 0.8em;
   border: 1px solid #ccc1b7;
 }
 .highlight table td { padding: 5px; }

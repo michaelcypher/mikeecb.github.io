@@ -8,20 +8,20 @@ time_to_read: 12
 
 Welcome to the third installment of my [Cryptopals Challenges](http://cryptopals.com/) mini-series / walkthrough! Some challenges focus on [block cipher cryptography](https://en.wikipedia.org/wiki/Block_cipher) (as before) and others focus on [stream ciphers](https://en.wikipedia.org/wiki/Stream_cipher). As always, I highly recommend reading previous challenge sets before this one. I often refer back to previous solutions!
 
-#### Cryptopals Sets: ####
-- [Set 1: Basics]({% post_url 2017-04-20-cryptopals-challenge-set-1 %})
-- [Set 2: Block crypto]({% post_url 2017-05-13-cryptopals-challenge-set-2%})
-- [Set 3: Block and stream crypto]({% post_url 2017-07-14-cryptopals-challenge-set-3%}) &nbsp;&nbsp;&nbsp;←
-- <span class="dead-link">Set 4: Stream crypto and randomness</span>
-- <span class="dead-link">Set 5: Diffie-Hellman and friends</span>
-- <span class="dead-link">Set 6: RSA and DSA</span>
-- <span class="dead-link">Set 7: Hashes </span>
-- <span class="dead-link">Set 8: Abstract Algebra</span>
+<h2>Cryptopals Sets:</h2>
+
+<ul class="nav">
+  <li><a href="{% post_url 2017-04-20-cryptopals-challenge-set-1 %}">Set 1: Basics</a></li>
+  <li><a href="{% post_url 2017-05-13-cryptopals-challenge-set-2%}">Set 2: Block crypto</a></li>
+  <li><a href="{% post_url 2017-07-14-cryptopals-challenge-set-3%}">Set 3: Block and stream crypto</a> &nbsp;&nbsp;&nbsp;←</li>
+  <li><span class="dead-link">Set 4: Stream crypto and randomness</span></li>
+  <li><span class="dead-link">Set 5: Diffie-Hellman and friends</span></li>
+  <li><span class="dead-link">Set 6: RSA and DSA</span></li>
+  <li><span class="dead-link">Set 7: Hashes </span></li>
+  <li><span class="dead-link">Set 8: Abstract Algebra</span></li>
+</ul>
 
 <b>Warning:</b> There are spoilers (solutions) below!
-
-<iframe class="youtube-video center-media" src="https://www.youtube.com/embed/rog8ou-ZepE" frameborder="0" allowfullscreen></iframe>
-<p class="image-label">This one again?!</p>
 
 <h3 id="17-cbc-padding-oracle">
   17. The CBC padding oracle

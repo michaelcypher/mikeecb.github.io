@@ -4,17 +4,17 @@ title: Movies watched
 permalink: /lists/movies
 ---
 
-I love movies, so here's a non-exhaustive list of movies I've watched over the years. I've excluded any I didn't finish or any whose plot I don't remember.
+<p>Here are some of the movies I've watched.</p>
 
 {% assign sorted = site.data.movies | sort: 'title' %}
 
-<b>Total count:</b> {{sorted.size}}
-
-<ul>
-{% for movie in sorted %}
+<ul class="nav">
+  {% for movie in sorted %}
     <li>
-        <a href="https://www.themoviedb.org/movie/{{movie.id}}">{{movie.title}}</a>,
-        <i class="no-wrap">{{movie.release_date}}</i>
+      <a href="https://www.themoviedb.org/movie/{{movie.id}}">{{movie.title}}</a>,
+      <i class="no-wrap">{{movie.release_date | date: '%B %d, %Y'}}</i>
     </li>
-{% endfor %}
+  {% endfor %}
 </ul>
+
+<p><b>Total count:</b> {{sorted.size}}</p>

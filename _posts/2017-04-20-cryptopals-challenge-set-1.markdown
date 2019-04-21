@@ -9,26 +9,24 @@ redirect_from: 2017/04/21/cryptopals-challenge-set-1.html
 
 This is the start of a mini-series where I walk through the [Cryptopals Challenges](http://cryptopals.com/). There are 8 sets of exercises and I'll be tackling 1 per blog post. If you've already completed the challenges, this series might be useful for comparison (let me know if you have any suggestions).
 
-#### Cryptopals Sets: ####
-- [Set 1: Basics]({% post_url 2017-04-20-cryptopals-challenge-set-1 %}) &nbsp;&nbsp;&nbsp;←
-- [Set 2: Block crypto]({% post_url 2017-05-13-cryptopals-challenge-set-2%})
-- [Set 3: Block and stream crypto]({% post_url 2017-07-14-cryptopals-challenge-set-3%})
-- <span class="dead-link">Set 4: Stream crypto and randomness</span>
-- <span class="dead-link">Set 5: Diffie-Hellman and friends</span>
-- <span class="dead-link">Set 6: RSA and DSA</span>
-- <span class="dead-link">Set 7: Hashes </span>
-- <span class="dead-link">Set 8: Abstract Algebra</span>
+<h2>Cryptopals Sets:</h2>
 
-I've chosen to do them in Python 2, but many of the solutions should also work for Python 3. I'm doing this to better grasp practical cryptography attacks.
+<ul class="nav">
+  <li><a href="{% post_url 2017-04-20-cryptopals-challenge-set-1 %}">Set 1: Basics</a> &nbsp;&nbsp;&nbsp;←</li>
+  <li><a href="{% post_url 2017-05-13-cryptopals-challenge-set-2%}">Set 2: Block crypto</a></li>
+  <li><a href="{% post_url 2017-07-14-cryptopals-challenge-set-3%}">Set 3: Block and stream crypto</a></li>
+  <li><span class="dead-link">Set 4: Stream crypto and randomness</span></li>
+  <li><span class="dead-link">Set 5: Diffie-Hellman and friends</span></li>
+  <li><span class="dead-link">Set 6: RSA and DSA</span></li>
+  <li><span class="dead-link">Set 7: Hashes </span></li>
+  <li><span class="dead-link">Set 8: Abstract Algebra</span></li>
+</ul>
 
 <b>Warning:</b> There are spoilers (solutions) below!
 
-<iframe class="youtube-video center-media" src="https://www.youtube.com/embed/rog8ou-ZepE" frameborder="0" allowfullscreen></iframe>
-<p class="image-label">A very relevant music video</p>
-
-<h3 id="1-convert-hex-to-base64">
+<h2 id="1-convert-hex-to-base64">
   1. Convert hex to base64
-</h3>
+</h2>
 
 The very first exercise is to convert a hexadecimal string to base64. This is a trivial task using Python.
 
@@ -40,9 +38,9 @@ base64_str = decoded.encode("base64")
 # SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t\n
 {% endhighlight %}
 
-<h3 id="2-fixed-xor">
+<h2 id="2-fixed-xor">
   2. Fixed XOR
-</h3>
+</h2>
 
 The second exercise is to "write a function that takes two equal-length buffers and produces their XOR combination".
 
@@ -66,9 +64,9 @@ b.encode("hex")
 # 746865206b696420646f6e277420706c6179
 {% endhighlight %}
 
-<h3 id="3-single-byte-xor-cipher">
+<h2 id="3-single-byte-xor-cipher">
   3. Single-byte XOR cipher
-</h3>
+</h2>
 
 This is when the Cryptopals Challenge starts to get interesting! In this exercise, the plaintext has been encrypted with one character (known as a [Caesar cipher](https://en.wikipedia.org/wiki/Caesar_cipher")). The goal is to find this character (the key), given a ciphertext provided in hexadecimal.
 
@@ -114,9 +112,9 @@ print break_single_key_xor(b1)
 # ('X', "Cooking MC's like a pound of bacon")
 {% endhighlight %}
 
-<h3 id="4-detect-single-character-xor">
+<h2 id="4-detect-single-character-xor">
   4. Detect single-character XOR
-</h3>
+</h2>
 
 This question is a rehash of the previous question. Instead of finding the most likely plaintext possible given one ciphertext, we are given 60 ciphertexts.
 
@@ -146,9 +144,9 @@ print key, english_plaintext
 # 5 Now that the party is jumping
 {% endhighlight %}
 
-<h3 id="5-implement-repeating-key-xor">
+<h2 id="5-implement-repeating-key-xor">
   5. Implement repeating-key XOR
-</h3>
+</h2>
 
 In this exercise, we are asked to encrypt a piece of text with a repeating-key (a [Vigenère cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher")). This was fairly simple to achieve using code from previous questions.
 
@@ -167,13 +165,13 @@ plaintext.encode("hex")
 # 0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f
 {% endhighlight %}
 
-<h3 id="6-breaking-repeating-key-xor">
+<h2 id="6-breaking-repeating-key-xor">
   6. Break repeating-key XOR
-</h3>
+</h2>
 
 When I said "this is when the Cryptopals Challenge starts to get interesting!" in [exercise 3](#3-single-byte-xor-cipher), I was wrong. It actually becomes interesting now! Let's break a Vigenère cipher!
 
-#### Hamming distance ####
+<h3>Hamming distance</h3>
 
 The first subtask is to write a function to determine the Hamming distance (distance is just the number of differing bits) between two encoded strings. A nice property (or is it the definition?) of XOR, is that the result of XOR'ing two bits is 1 if and only if they are different. We can therefore determine the Hamming distance between two strings by XOR'ing them (using the function we previously created) and counting up the number of 1 bits.
 
@@ -191,7 +189,7 @@ hamming_distance(b1, b2)
 # 37
 {% endhighlight %}
 
-#### Determining likely key sizes ####
+<h3>Determining likely key sizes</h3>
 
 To break a Vigenère cipher, we need to determine the key and to do that we must first determine the key size. We can use the normalized Hamming distance between ciphertext blocks (groups of bytes of key size length) to guess the key size. The key size with the smallest normalized Hamming distance is probably the actual key size used. Using this heuristic, we discover the most likely key size is 2 bytes (followed by 3 bytes and then 29 bytes) for the ciphertext provided.
 
@@ -228,7 +226,7 @@ normalized_distances = sorted(normalized_distances, key=lambda (\_, y): y)
 
 <b>Note</b>: Don't forget to decode the ciphertext from base64! I spent way too long trying to fix that bug.
 
-#### Putting it all together ####
+<h3>Putting it all together</h3>
 
 Now that we have a list of potential key sizes ordered by likelihood, we can go through each and see if it is the correct one.
 
@@ -276,9 +274,9 @@ for KEYSIZE, _ in normalized_distances[:5]:
 # More nonsense ...
 {% endhighlight %}
 
-<h3 id="7-aes-in-ecb-mode">
+<h2 id="7-aes-in-ecb-mode">
   7. AES in ECB mode
-</h3>
+</h2>
 
 The last two exercises in this set involve working with a real encryption standard, [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) (although [ECB mode](https://crypto.stackexchange.com/questions/20941/why-shouldnt-i-use-ecb-encryption) is hopefully not used as it's insecure)! I'll discuss ECB mode further in the next exercise, where we have to break AES in ECB mode, but for this one, let's just decrypt a given ciphertext.
 
@@ -307,13 +305,13 @@ plaintext = obj.decrypt(ciphertext)
 
 <b>Note:</b> I used the [pycrypto](https://pypi.python.org/pypi/pycrypto) module but had a few `import` issues on my MacBook when installed using pip. If you have similar issues, have a look at this [stackoverflow answer](https://stackoverflow.com/questions/19623267/importerror-no-module-named-crypto-cipher#20968427).
 
-<h3 id="8-detect-aes-in-ecb-mode">
+<h2 id="8-detect-aes-in-ecb-mode">
   8. Detect AES in ECB mode
-</h3>
+</h2>
 
 We've made it to the last exercise (in the first set)! The rest of the exercises built up to this one. Let's get started.
 
-#### Electronic Codebook (ECB) mode ####
+<h3>Electronic Codebook (ECB) mode</h3>
 
 [ECB mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_Codebook_.28ECB.29) is one of simplest block cipher mode of operation. The plaintext is divided into blocks of a fixed size and each block is encrypted separately. Decryption is performed in a similar fashion.
 
@@ -348,6 +346,6 @@ ecb_ciphertext
 
 <b>Note:</b> Although we didn't break the ciphertext (by discovering the key or plaintext), we at least know the mode it was encrypted in.
 
-### Fin ###
+<h2>Fin</h2>
 
 That's it! I hope you enjoyed walking through the first set of Cryptopals Challenges. Want to keep going? Read through the [second set]({% post_url 2017-05-13-cryptopals-challenge-set-2%}) of exercises.

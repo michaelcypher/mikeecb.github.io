@@ -9,11 +9,9 @@ layout: default
 {% endif %}
 
 <section>
-  <h2>{{ page.title }}</h2>
-
-  {% if page.date %}
-  <p class="small">Posted {{ page.date | date: '%B %d, %Y' }}; {{ page.time_to_read }} min read</p>
-  {% endif %}
-
+  <h1 class="date">{{ page.title }}</h1>
+  <p class="date">
+    Posted {{ page.date | date: '%B %d, %Y' }}; {{ page.time_to_read }} min read
+  </p>
   {{ content }}
 </section>

@@ -15,11 +15,9 @@ I _love_ list, dict and set comprehensions in Python. It's the one feature of th
 
 In this blog post, I'll briefly describe comprehensions, explain a performance disadvantage that I frequently face, and show you some code that mitigates this disadvantage by transforming them at runtime.
 
-<img src="/assets/imgs/iguana-1.jpeg" alt="An iguana" />
-
-<h3 id="what-are-comprehensions">
+<h2 id="what-are-comprehensions">
   What are comprehensions
-</h3>
+</h2>
 
 If you're already familiar with comprehensions, feel free to skip this section! If not, I'll provide a quick breakdown.
 
@@ -69,9 +67,9 @@ acc = [
 {% endhighlight %}
 
 
-<h3 id="comprehensive-shortcomings">
+<h2 id="comprehensive-shortcomings">
   Comprehensive shortcomings
-</h3>
+</h2>
 
 In my opinion, there's one large shortcoming of comprehensions over their procedural cousins. `for` loops contain statements (e.g. `x = foo(y)`) whereas comprehensions can only contain expressions (e.g. `x + foo(y)`) and are in fact expressions themselves. As a result, we can't alias the return value of a function call so to use it again. This wouldn't be an issue if assignments in Python were treated as expressions (like in C or C++), but they're treated as statements.
 
@@ -112,9 +110,9 @@ acc = [
 ]
 {% endhighlight %}
 
-<h3 id="lets-build-a-compiler">
+<h2 id="lets-build-a-compiler">
   Let's build a compiler!
-</h3>
+</h2>
 
 One idea is to take an inefficient, but clean and concise comprehension and optimize away duplicate and equivalent function calls so that it's efficient but ugly (i.e. the 2nd work-around mentioned above). The act of taking a program and rewriting it be quicker while sacrifising clarify is something most compilers do for you, so on the surface this idea doesn't seem unreasonable.
 
@@ -130,9 +128,9 @@ However, building an end-to-end compiler is hard and is usually broken into [mul
 6. Output code generation.
 
 
-<h3 id="pythons-ast-module-to-the-rescue">
+<h2 id="pythons-ast-module-to-the-rescue">
   Python's <a href="https://docs.python.org/2/library/ast.html"><code class="highlighter-rouge">ast</code></a> module to the rescue!
-</h3>
+</h2>
 
 Luckily, Python's standard library has an `ast` module that can take some Python source code as input and produce an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (AST). It also provides a [`NodeVisitor`](https://docs.python.org/2/library/ast.html#ast.NodeVisitor) and [`NodeTransformer`](https://docs.python.org/2/library/ast.html#ast.NodeTransformer) that let's us easily walk the structure of a Python program in tree form and transform it as we go. Python also has a built-in [`compile`](https://docs.python.org/2/library/functions.html#compile) function that takes an AST (or string) as input and compiles it into a code object that can then be executed. 
 
@@ -177,7 +175,7 @@ expr = ...
 comprehension = (expr target, expr iter, expr* ifs)
 {% endhighlight %}
 
-#### Removing the function decorator (or preventing infinite recursion) ####
+<h3>Removing the function decorator (or preventing infinite recursion)</h3>
 
 If we're not careful, since we're performing optimizations at runtime, we may perform these optimizations every time our function (the one wrapped with `@optimize_comprehensions` decorator) is called. Moreover, this would actually cause users to infinitely recurse when they attempt to call the function to be optimized.
 
@@ -198,11 +196,11 @@ To prevent this, the first transformation we'll perform is to remove the decorat
         return node
 {% endhighlight %}
 
-#### Equivalent function calls ####
+<h3>Equivalent function calls</h3>
 
 To determine if a there are duplicte function calls, we must first define an equality relation between `Call` nodes. We could make this super smart by ingorning ordering of keyword arguments (e.g. `foo(a=1, b=2) == foo(b=2, a=1)`) and evaluating arguement expressions to determine if their result is equal (e.g. `foo(a=1+2) == foo(a=3)`). However, for the sake of simplicity, we'll just say two `Call` nodes are equal if they had the same "formatted dump" (essentially,  the same string representation) using the `dump` method.
 
-#### Finding duplicate function calls ####
+<h3>Finding duplicate function calls</h3>
 
 Our `OptimizeComprehensions` `NodeTransformer` will work by walking the subtree of comprehension (or generator) node and relacing duplicate `Call` nodes with a `Name` node that will read the value that a variable points to. In order to do this, we must first do a initial pass over the subtree of a comprehension and find duplicate nodes. We'll acheive this by creating a `NodeVisitor` class that will visit `Call` nodes and take return duplicate `Calls`.
 
@@ -254,11 +252,9 @@ class OptimizeComprehensions(NodeTransformer):
     visit_GeneratorExp = visit_comp
 {% endhighlight %}
 
-#### Replacing duplicate calls with variables
+<h3>Replacing duplicate calls with variables</h3>
 
 The next step is to replace each duplicate `Call` node with a `Name` node. In Python terms, this means replacing duplicate function calls with variables.
-
-<img src="/assets/imgs/iguana-2.jpeg" alt="Another iguana" />
 
 This is fairly trivial, but there is one decision we have to make. How do we generate variable names from a function call? I've chosen a simple but ugly solution: hash the formatted function dump and prepend it with double underscores (as Python variable names cannot start with numbers). If we were to inspect our transformed comprehension, we may see variables that look like `__258792`. This solution is "ugly" as it's vulnerable to hash collisions. However, for the purpose of this blog post, we're going to pretend they don't exist.
 
@@ -283,7 +279,7 @@ This is fairly trivial, but there is one decision we have to make. How do we gen
         return '__{}'.format(abs(hash(dump(node))))
 {% endhighlight %}
 
-#### Moving the function call to a new "comprehension" ####
+<h3>Moving the function call to a new "comprehension"</h3>
 
 Now that we're using variables (`Name` nodes) instead of duplicate function calls (`Call` nodes), we must make sure we assign the result of the function calls to the new variables. We do this by adding another `comprehension` to the `ListComp`, `SetComp`, `DictComp` or `GeneratorExp` node's list of `comprehension`s that looks like `for __256792 in [foo(y)]`.
 
@@ -347,7 +343,7 @@ This is what our `visit_comp` method looks like now:
         # ...
 {% endhighlight %}
 
-#### Unique target variable names ####
+<h3>Unique target variable names</h3>
 
 Our optimizer is nearly there. It currently fails when a nested comprehension has the target variable name as another child comprehension within the same top level comprehension (it also fails if it has the same target variable name as the top level comprehension). So what's the solution? Another stupidily simple solution that is to change the name of all target variable names that are children of a comprehension node so that they're unique.
 
@@ -429,9 +425,9 @@ def test_multiple_generators_with_same_target_variable_name():
 {% endhighlight %}
 
 
-<h3 id="to-conclude-weve-done-it">
+<h2 id="to-conclude-weve-done-it">
   To conclude, we've done it!
-</h3>
+</h2>
 
 In 200 lines of Python (including docstrings, comments and imports), we've built an optimizer that takes potentially slow but elegant comprehensions and produces ugly but fast comprehensions at runtime.
 
@@ -446,7 +442,7 @@ Some takeaways:
 1. Writing a code optimizer is generally pretty simple, especially with Python's `ast` module. Go ahead and try!
 2. You can _never_ trust the Python code you're calling... even if you have the source code (which you almost always have access to when working with Python). If someone can inject some malicious code into your Python process, they now have entire control of it.
 
-#### Caveats ####
+<h3>Caveats</h3>
 
 Writing optimizers and/or compilers has the potential of creating really-hard-to-debug bugs. Although this has been a fun exercise, I don't recommend using the optimizer written in this post at the moment in any production environments.
 

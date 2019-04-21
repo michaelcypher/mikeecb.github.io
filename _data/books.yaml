@@ -1,13 +1,39 @@
 book_groups:
+ - year: 2020
+   books:
+    - name: "The Cuckoo's Egg: Tracking a Spy Through the Maze of Computer Espionage"
+      author: Cliff Stoll
+      amazon_link: https://www.amazon.com/Cuckoos-Egg-Tracking-Computer-Espionage/dp/1416507787
+
+    - name: "Sandworm: A New Era of Cyberwar and the Hunt for the Kremlin's Most Dangerous Hackers"
+      author: Andy Greenberg
+      amazon_link: https://www.amazon.com/Sandworm-Cyberwar-Kremlins-Dangerous-Hackers/dp/0385544405
+
  - year: 2019
    books:
     - name: Lolita
       author: Vladimir Nabokov
       amazon_link: https://www.amazon.com/Lolita-Vladimir-Nabokov/dp/0679723161
-      
+
     - name: Educated
       author: Tara Westover
       amazon_link: https://www.amazon.com/Educated-Memoir-Tara-Westover-ebook/dp/B072BLVM83
+
+    - name: The Remains of the Day
+      author: Kazuo Ishiguro
+      amazon_link: https://www.amazon.com/Remains-Day-Kazuo-Ishiguro/dp/0679731725
+
+    - name: The Managers Path
+      author: Camille Fournier
+      amazon_link: https://www.amazon.com/Managers-Path-Leaders-Navigating-Growth/dp/1491973897
+
+    - name: "Bad Blood: Secrets and Lies in a Silicon Valley Startup"
+      author: John Carreyrou
+      amazon_link: https://www.amazon.com/Bad-Blood-Secrets-Silicon-Startup/dp/152473165X
+
+    - name: "Against Equality: Queer Revolution, Not Mere Inclusion"
+      author: Ryan Conrad, Editor
+      amazon_link: https://www.amazon.com/Against-Equality-Queer-Revolution-Inclusion/dp/1849351848
 
  - year: 2018
    books:
@@ -43,7 +69,7 @@ book_groups:
       star: true
 
     - name: The Outsider
-      author: Albert Camus (Sandra Smith)
+      author: Albert Camus (Sandra Smith, Translator)
       amazon_link: https://www.amazon.com/Outsider-Albert-Camus/dp/0141198060
 
     - name: Fahrenheit 451

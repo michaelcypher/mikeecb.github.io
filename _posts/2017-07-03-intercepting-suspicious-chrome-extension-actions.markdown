@@ -10,7 +10,7 @@ I just finished my masters project at [Imperial College London](http://www.imper
 
 <img src="/assets/intercepting-suspicious-chrome-extension-actions/demo.gif" alt="Our modified browser intercepting suspicious extension actions">
 
-### Abstract ###
+<h2>Abstract</h2>
 
 Browser users have increasingly fallen victim to a variety of attacks carried out by malicious browser extensions. These extensions often have powerful privileges and can execute within the context of sensitive web-pages. Popular attacks include hijacking users' social media accounts, injecting or replacing advertisements and tracking users. Previous work to detect malice in extensions has not succeeded in providing adequate security guarantees about extensions running within browsers.
 
@@ -18,10 +18,12 @@ We present a novel extension security model that categorises certain actions as 
 
 We extensively evaluate our modified browser with regards to security guarantees, user interface, user understanding and performance overhead. Results demonstrate our browser's ability to intercept and stop malicious extension operations as they occur. However, our evaluation also suggests that users struggle with this responsibility and we find evidence of significant browser performance overheads.
 
-### Open Access ###
+<h2>Open Access</h2>
 
 My report, presentation and the implementation diff is freely available to anyone.
 
-- <a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/report.pdf" | relative_url }}">report.pdf</a> (3.4 MB)
-- <a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/presentation.pdf" | relative_url }}">presentation.pdf</a> (917 KB)
-- <a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/patch.diff" | relative_url }}">patch.diff</a> (160 KB)
+<ul class="nav">
+  <li><a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/report.pdf" | relative_url }}">report.pdf</a> (3.4 MB)</li>
+  <li><a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/presentation.pdf" | relative_url }}">presentation.pdf</a> (917 KB)</li>
+  <li><a href="{{ "/assets/intercepting-suspicious-chrome-extension-actions/patch.diff" | relative_url }}">patch.diff</a> (160 KB)</li>
+</ul>
