@@ -11,6 +11,10 @@ book_groups:
 
  - year: 2019
    books:
+    - name: " A People's History of the Supreme Court: The Men and Women Whose Cases and Decisions Have Shaped Our Constitution"
+      author: Peter Irons
+      amazon_link: https://www.amazon.com/Peoples-History-Supreme-Court-dp-0670870064/dp/0670870064
+
     - name: Lolita
       author: Vladimir Nabokov
       amazon_link: https://www.amazon.com/Lolita-Vladimir-Nabokov/dp/0679723161
