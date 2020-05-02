@@ -9,6 +9,10 @@ book_groups:
       author: Andy Greenberg
       amazon_link: https://www.amazon.com/Sandworm-Cyberwar-Kremlins-Dangerous-Hackers/dp/0385544405
 
+    - name: "Ghost in the Wires: My Adventures as the World's Most Wanted Hacker"
+      author: Kevin Mitnick
+      amazon_link: https://www.amazon.com/Ghost-Wires-Adventures-Worlds-Mitnick/dp/B00FOTF7MI
+
  - year: 2019
    books:
     - name: " A People's History of the Supreme Court: The Men and Women Whose Cases and Decisions Have Shaped Our Constitution"
