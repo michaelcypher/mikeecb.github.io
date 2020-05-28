@@ -13,6 +13,18 @@ book_groups:
       author: Kevin Mitnick
       amazon_link: https://www.amazon.com/Ghost-Wires-Adventures-Worlds-Mitnick/dp/B00FOTF7MI
 
+    - name: "Countdown to Zero Day: Stuxnet and the Launch of the World's First Digital Weapon"
+      author: Kim Zetter
+      amazon_link: https://www.amazon.com/Countdown-Zero-Day-Stuxnet-Digital/dp/0770436196
+
+    - name: "How to Be an Antiracist"
+      author: Ibram X. Kendi
+      amazon_link: https://www.amazon.com/How-Be-Antiracist-Ibram-Kendi/dp/0525509283
+
+    - name: "Permanent Record"
+      author: Edward Snowden
+      amazon_link: https://www.amazon.com/Permanent-Record-Edward-Snowden/dp/1250237238
+
  - year: 2019
    books:
     - name: " A People's History of the Supreme Court: The Men and Women Whose Cases and Decisions Have Shaped Our Constitution"

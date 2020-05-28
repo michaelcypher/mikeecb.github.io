@@ -41,5 +41,3 @@ permalink: /lists/books
     {% endif %}
   {% endfor %}
 {% endfor %}
-
-<p><b>Total count:</b> {{counter}}</p>
