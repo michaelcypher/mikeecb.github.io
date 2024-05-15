@@ -10,8 +10,6 @@ plugins:
   - jekyll-feed
   - jekyll-redirect-from
 
-include: [_lists]
-
 highlighter: rouge
 
 permalink: /writing/:title
